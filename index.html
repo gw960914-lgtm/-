@@ -3,83 +3,65 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>특부후 264기 임관식 배치도 조회</title>
-    <meta property="og:type" content="website">
+    <title>특부후 264기 임관식 배치도</title>
     <meta property="og:title" content="특부후 264기 임관식 좌석 배치도">
-    <meta property="og:description" content="후보생의 교번 또는 성명을 입력하여 좌석 위치를 확인하세요.">
-    <meta property="og:image" content="https://images.unsplash.com/photo-1541872703-74c5e44368f9?w=800">
     <script src="https://cdn.tailwindcss.com"></script>
-
     <style>
-        @keyframes pulse-glow {
-            0%, 100% { transform: scale(1); box-shadow: 0 0 15px rgba(245, 158, 11, 0.8); }
-            50% { transform: scale(1.08); box-shadow: 0 0 25px rgba(245, 158, 11, 1); }
-        }
-        .highlight-seat { animation: pulse-glow 1.5s infinite; border-color: #f59e0b !important; background-color: #d97706 !important; color: #ffffff !important; z-index: 20; }
-        .custom-scrollbar::-webkit-scrollbar { width: 8px; height: 8px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: #1e293b; }
+        @keyframes pulse-glow { 0%, 100% { transform: scale(1); box-shadow: 0 0 15px rgba(245, 158, 11, 0.8); } 50% { transform: scale(1.08); box-shadow: 0 0 25px rgba(245, 158, 11, 1); } }
+        .highlight-seat { animation: pulse-glow 1.5s infinite; border-color: #f59e0b !important; background-color: #d97706 !important; color: #ffffff !important; }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
     </style>
 </head>
-<body class="bg-slate-950 text-slate-100 min-h-screen font-sans flex flex-col items-center p-3 sm:p-6">
-
+<body class="bg-slate-950 text-slate-100 min-h-screen p-4 flex flex-col items-center">
     <div class="w-full max-w-4xl bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-4 sm:p-6 flex flex-col gap-6">
-        
-        <header class="text-center space-y-3 relative border-b border-slate-800 pb-5">
-            <h1 class="text-2xl sm:text-3xl font-extrabold text-emerald-400 tracking-tight">특부후 264기 임관식 배치도</h1>
-            <div class="flex flex-wrap justify-center items-center gap-2 pt-1">
-                <button onclick="toggleModal('notice-modal')" class="bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 text-xs px-3 py-1.5 rounded-full border border-amber-500/40 transition">안내</button>
-                <button onclick="toggleViewDirection()" id="view-toggle-btn" class="bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300 text-xs px-3 py-1.5 rounded-full border border-indigo-500/40 transition">관람석 시점</button>
-                <button onclick="copyCurrentUrl()" class="bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-300 text-xs px-3 py-1.5 rounded-full border border-yellow-500/40 transition">공유</button>
+        <header class="text-center space-y-3 pb-5 border-b border-slate-800">
+            <h1 class="text-2xl font-extrabold text-emerald-400">특부후 264기 임관식</h1>
+            <div class="flex justify-center gap-2">
+                <button onclick="toggleModal('notice-modal')" class="bg-amber-500/20 text-amber-300 px-3 py-1 rounded-full text-xs">안내</button>
+                <button onclick="toggleViewDirection()" class="bg-indigo-500/20 text-indigo-300 px-3 py-1 rounded-full text-xs">시점 전환</button>
+                <button onclick="copyCurrentUrl()" class="bg-yellow-500/20 text-yellow-300 px-3 py-1 rounded-full text-xs">공유</button>
             </div>
         </header>
 
-        <section class="bg-slate-800/80 p-4 rounded-xl border border-slate-700/60 shadow-inner">
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <input type="text" id="search-number" placeholder="교번 (예: 76)" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200">
-                <input type="text" id="search-name" placeholder="성명 (예: 박철완)" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200">
+        <section class="bg-slate-800 p-4 rounded-xl">
+            <div class="grid grid-cols-2 gap-3 mb-4">
+                <input type="text" id="search-number" placeholder="교번" class="bg-slate-900 border border-slate-700 rounded p-2 text-sm text-white">
+                <input type="text" id="search-name" placeholder="성명" class="bg-slate-900 border border-slate-700 rounded p-2 text-sm text-white">
             </div>
-            <div class="mt-4 flex gap-2">
-                <button onclick="executeSearch()" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2.5 rounded-lg text-sm">조회하기</button>
-                <button onclick="resetSearch()" class="bg-slate-700 hover:bg-slate-600 text-slate-300 font-medium px-4 py-2.5 rounded-lg text-sm">초기화</button>
+            <div class="flex gap-2">
+                <button onclick="executeSearch()" class="flex-1 bg-emerald-600 py-2 rounded text-sm font-bold">조회하기</button>
+                <button onclick="resetSearch()" class="bg-slate-700 px-4 py-2 rounded text-sm">초기화</button>
             </div>
         </section>
 
         <div id="search-result-banner" class="hidden p-3 rounded-lg text-sm text-center font-semibold"></div>
 
         <section class="space-y-3 text-center">
-            <div class="bg-slate-100 text-slate-900 font-extrabold py-2.5 rounded-xl shadow-md">단 상 ( 사 열 대 )</div>
-            <div class="max-w-xs mx-auto text-xs">
-                <div id="commander-card" class="bg-slate-800 border border-emerald-500/50 p-2.5 rounded-lg shadow-md transition cursor-pointer" onclick="openCommanderModal()">
-                    <span class="text-emerald-400 font-bold block mb-0.5">지휘자</span>
-                    <span class="text-slate-100 font-bold text-sm">76번 박철완</span>
-                </div>
+            <div class="bg-slate-100 text-slate-900 font-extrabold py-2 rounded-xl">단 상</div>
+            <div id="commander-card" class="bg-slate-800 border border-emerald-500 p-2 rounded-lg cursor-pointer max-w-[150px] mx-auto text-xs" onclick="openCommanderModal()">
+                <span class="text-emerald-400 font-bold">지휘자</span><br>76번 박철완
             </div>
         </section>
 
-        <section class="border border-slate-800 bg-slate-950 p-3 sm:p-4 rounded-xl space-y-3">
-            <div class="grid grid-cols-2 text-center text-xs font-bold border-b border-slate-800 pb-2">
-                <div class="text-purple-400">제1제대</div>
-                <div class="text-emerald-400">제2제대</div>
-            </div>
-            <div class="overflow-x-auto custom-scrollbar pb-2">
-                <div class="min-w-[640px]">
-                    <div class="grid grid-cols-8 gap-1.5 mb-2 text-center text-xs text-slate-400" id="column-headers"></div>
-                    <div id="seat-grid" class="grid grid-cols-8 gap-1.5"></div>
+        <section class="border border-slate-800 bg-slate-950 p-3 rounded-xl overflow-x-auto custom-scrollbar">
+            <div class="min-w-[600px]">
+                <div class="grid grid-cols-[30px_repeat(8,1fr)] gap-1 mb-2 text-center text-[10px] text-slate-400" id="header-grid">
+                    <div></div><div>1열</div><div>2열</div><div>3열</div><div>4열</div><div>5열</div><div>6열</div><div>7열</div><div>8열</div>
                 </div>
+                <div id="seat-grid" class="grid grid-cols-[30px_repeat(8,1fr)] gap-1"></div>
             </div>
         </section>
-        
-        <button onclick="checkAdminPassword()" class="text-slate-600 text-[10px] hover:text-slate-400 underline mt-4">관리자 설정 (오탈자 수정)</button>
+        <button onclick="checkAdminPassword()" class="text-slate-600 text-[10px] underline">관리자 설정</button>
     </div>
 
     <!-- Modals -->
-    <div id="detail-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4"><div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-sm w-full p-5 shadow-2xl" id="modal-content"></div></div>
-    <div id="notice-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4"><div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-md w-full p-5 shadow-2xl space-y-3 text-sm text-slate-300"><p>1. 교번 또는 성명을 입력하시고 [조회하기] 버튼을 누르시면 되겠습니다.</p><p>2. 다른 인원을 검색하고 싶으실 땐 꼭 [초기화] 버튼을 눌러주시기 바랍니다.</p><p>3. 제1제대(1~4열)는 <strong>보라색</strong>, 제2제대(5~8열)는 <strong>녹색</strong>으로 표시됩니다.</p><button onclick="toggleModal('notice-modal')" class="w-full bg-amber-600 text-white py-2 rounded-lg">확인</button></div></div>
-    
+    <div id="detail-modal" class="fixed inset-0 bg-black/70 hidden z-50 flex items-center justify-center p-4"><div class="bg-slate-900 rounded-2xl max-w-sm w-full p-5" id="modal-content"></div></div>
+    <div id="notice-modal" class="fixed inset-0 bg-black/70 hidden z-50 flex items-center justify-center p-4"><div class="bg-slate-900 rounded-2xl max-w-sm w-full p-5 text-sm text-slate-300 space-y-2"><p>1. 교번 또는 성명을 입력하시고 [조회하기]를 버튼을 누르시면 되겠습니다.</p><p>2. 다른 인원을 검색하고 싶으실 땐 꼭 [초기화] 버튼을 눌러주시면 되겠습니다.</p><button onclick="toggleModal('notice-modal')" class="w-full bg-amber-600 text-white py-2 mt-4 rounded">확인</button></div></div>
+
     <script>
         const TOTAL_COLS = 8, TOTAL_ROWS = 21;
-        const defaultData = [
+        let traineesData = JSON.parse(localStorage.getItem('traineeList')) || [
             { number: "1", name: "강민우" }, { number: "3", name: "고경민" }, { number: "5", name: "곽민혁" }, { number: "7", name: "구민제" }, { number: "8", name: "구승범" }, { number: "9", name: "구휘성" }, { number: "10", name: "권광림" }, { number: "11", name: "권선우" }, { number: "12", name: "권성찬" }, { number: "13", name: "김강휘" }, { number: "14", name: "김건우" }, { number: "15", name: "김경모" }, { number: "18", name: "김대현" }, { number: "19", name: "김덕현" }, { number: "20", name: "김도현" }, { number: "21", name: "김동현" }, { number: "22", name: "김동형" }, { number: "26", name: "김민준" }, { number: "28", name: "김병수" }, { number: "29", name: "김승하" }, { number: "33", name: "김어진" },
             { number: "34", name: "김영광" }, { number: "36", name: "김원철" }, { number: "38", name: "김윤찬" }, { number: "39", name: "김인수" }, { number: "40", name: "김종빈" }, { number: "41", name: "김준권" }, { number: "43", name: "김준혁" }, { number: "44", name: "김진우" }, { number: "46", name: "김태규" }, { number: "47", name: "김태연" }, { number: "48", name: "김하진" }, { number: "49", name: "김현민" }, { number: "51", name: "김현우" }, { number: "53", name: "김현준" }, { number: "54", name: "김현준" }, { number: "55", name: "김현중" }, { number: "56", name: "나겸우" }, { number: "57", name: "나시후" }, { number: "58", name: "류호식" }, { number: "59", name: "박건욱" }, { number: "60", name: "박심윤" },
             { number: "61", name: "박상권" }, { number: "63", name: "박승태" }, { number: "64", name: "박시환" }, { number: "65", name: "박예찬" }, { number: "66", name: "박정수" }, { number: "67", name: "박제연" }, { number: "68", name: "박주성" }, { number: "69", name: "박주형" }, { number: "70", name: "박준성" }, { number: "71", name: "박중정" }, { number: "73", name: "박진응" }, { number: "75", name: "박찬민" }, { number: "77", name: "박태수" }, { number: "78", name: "박현준" }, { number: "80", name: "백승곤" }, { number: "81", name: "백승규" }, { number: "83", name: "서재경" }, { number: "84", name: "서창빈" }, { number: "85", name: "성유찬" }, { number: "86", name: "소현섭" },
@@ -89,94 +71,54 @@
             { number: "165", name: "한영민" }, { number: "167", name: "한태영" }, { number: "170", name: "홍지현" }, { number: "171", name: "홍현호" }, { number: "172", name: "황태빈" }, { number: "174", name: "강지우" }, { number: "175", name: "강민아" }, { number: "176", name: "고준우" }, { number: "178", name: "김솔민" }, { number: "181", name: "김지민" }, { number: "183", name: "박인혁" }, { number: "184", name: "송연우" }, { number: "185", name: "신승기" }, { number: "186", name: "오서준" }, { number: "187", name: "이도현" }, { number: "188", name: "이민성" }, { number: "189", name: "임종화" }, { number: "190", name: "장민성" }, { number: "191", name: "전창현" }, { number: "192", name: "정정훈" }, { number: "194", name: "최우진" },
             { number: "195", name: "최준혁" }, { number: "196", name: "홍준혁" }, { number: "197", name: "김건하" }, { number: "198", name: "김남운" }, { number: "200", name: "김상현" }, { number: "202", name: "남두환" }, { number: "205", name: "박지원" }, { number: "206", name: "변승우" }, { number: "208", name: "오준영" }, { number: "211", name: "이강" }, { number: "212", name: "이정규" }, { number: "214", name: "이진우" }, { number: "216", name: "이한빈" }, { number: "218", name: "임철희" }, { number: "219", name: "정다훈" }, { number: "221", name: "지승효" }, { number: "224", name: "최효명" }
         ];
-
-        let traineesData = JSON.parse(localStorage.getItem('traineeList')) || defaultData;
         let isParentView = true;
-
-        function copyCurrentUrl() {
-            const dummy = document.createElement('input');
-            document.body.appendChild(dummy);
-            dummy.value = window.location.href;
-            dummy.select();
-            document.execCommand('copy');
-            document.body.removeChild(dummy);
-            const banner = document.getElementById('search-result-banner');
-            banner.className = "p-3 rounded-lg text-sm text-center font-semibold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30";
-            banner.innerText = "웹사이트 주소가 복사되었습니다.";
-            banner.classList.remove('hidden');
-        }
 
         function renderBoard() {
             const seatGrid = document.getElementById('seat-grid');
-            const colHeaders = document.getElementById('column-headers');
-            seatGrid.innerHTML = ''; colHeaders.innerHTML = '';
-            for (let c = 1; c <= TOTAL_COLS; c++) {
-                const actualCol = isParentView ? c : (TOTAL_COLS - c + 1);
-                const colDiv = document.createElement('div');
-                colDiv.className = `py-1 rounded bg-slate-800 border border-slate-700 ${actualCol === 4 ? 'mr-1 border-r-2 border-r-indigo-500' : ''}`;
-                colDiv.innerText = `${actualCol}열`; colHeaders.appendChild(colDiv);
-            }
+            seatGrid.innerHTML = '';
             const gridMap = traineesData.map((t, i) => ({ ...t, col: Math.floor(i / 21) + 1, row: (i % 21) + 1 }));
             for (let r = 1; r <= TOTAL_ROWS; r++) {
+                const rowLabel = document.createElement('div'); rowLabel.className = "text-[9px] flex items-center justify-center text-slate-500"; rowLabel.innerText = `${r}행`; seatGrid.appendChild(rowLabel);
                 for (let c = 1; c <= TOTAL_COLS; c++) {
                     const colIndex = isParentView ? c : (TOTAL_COLS - c + 1);
                     const person = gridMap.find(t => t.col === colIndex && t.row === r);
                     const seatBtn = document.createElement('button');
                     const echelonBg = (colIndex <= 4) ? 'bg-purple-950/60' : 'bg-emerald-950/60';
-                    const isBorderRight = (c === 4);
                     if (person) {
-                        seatBtn.className = `p-2 rounded border text-center transition flex flex-col items-center justify-center min-h-[46px] ${echelonBg} ${isBorderRight ? 'mr-1 border-r-2 border-r-indigo-500' : ''}`;
+                        seatBtn.className = `p-2 rounded border text-center text-[10px] ${echelonBg} border-slate-700 hover:border-emerald-500`;
                         seatBtn.onclick = () => openDetailModal(person);
                         seatBtn.id = `seat-${colIndex}-${r}`;
-                        seatBtn.innerHTML = `<span class="text-[10px] text-slate-400">${person.number}번</span><span class="text-xs font-bold">${person.name}</span>`;
-                    } else {
-                        seatBtn.className = `p-2 rounded border border-dashed border-slate-800 bg-slate-950/40 ${isBorderRight ? 'mr-1 border-r-2 border-r-indigo-500' : ''}`;
-                        seatBtn.disabled = true;
-                    }
+                        seatBtn.innerHTML = `<span class="block text-slate-400 font-mono">${person.number}</span><span class="font-bold">${person.name}</span>`;
+                    } else { seatBtn.className = "bg-slate-900 border border-slate-800 rounded"; seatBtn.disabled = true; }
                     seatGrid.appendChild(seatBtn);
                 }
             }
         }
 
         function executeSearch() {
-            const numberVal = document.getElementById('search-number').value.trim();
-            const nameVal = document.getElementById('search-name').value.trim();
-            const banner = document.getElementById('search-result-banner');
-            document.querySelectorAll('.highlight-seat').forEach(e => e.classList.remove('highlight-seat'));
-            
-            if (numberVal === "76" || nameVal.includes("박철완")) {
-                const card = document.getElementById('commander-card');
-                card.classList.add('highlight-seat'); card.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                banner.className = "p-3 rounded-lg text-sm text-center font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30";
-                banner.innerHTML = `[76번 박철완] 지휘자입니다.`; banner.classList.remove('hidden'); return;
-            }
-
-            const gridMap = traineesData.map((t, i) => ({ ...t, col: Math.floor(i / 21) + 1, row: (i % 21) + 1 }));
-            const match = gridMap.find(t => (!numberVal || t.number === numberVal) && (!nameVal || t.name.includes(nameVal)));
-            
+            const n = document.getElementById('search-number').value, m = document.getElementById('search-name').value;
+            if (n === "76" || m === "박철완") { document.getElementById('commander-card').scrollIntoView({behavior:'smooth'}); alert("지휘자 박철완입니다."); return; }
+            const match = traineesData.map((t, i) => ({ ...t, col: Math.floor(i / 21) + 1, row: (i % 21) + 1 })).find(t => (n && t.number === n) || (m && t.name.includes(m)));
             if (match) {
-                const targetId = `seat-${(isParentView ? match.col : (TOTAL_COLS - match.col + 1))}-${match.row}`;
-                const seatBtn = document.getElementById(targetId);
-                seatBtn.classList.add('highlight-seat'); seatBtn.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                banner.className = "p-3 rounded-lg text-sm text-center font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30";
-                banner.innerHTML = `[${match.number}번 ${match.name}] 위치: ${match.col <= 4 ? "제1제대" : "제2제대"} ${match.col}열 ${match.row}행`; banner.classList.remove('hidden');
-            } else { alert("찾을 수 없습니다."); }
+                const target = document.getElementById(`seat-${isParentView ? match.col : (TOTAL_COLS - match.col + 1)}-${match.row}`);
+                target.classList.add('highlight-seat'); target.scrollIntoView({behavior:'smooth'});
+                document.getElementById('search-result-banner').innerHTML = `[${match.number}번 ${match.name}] 위치: ${match.col}열 ${match.row}행`; document.getElementById('search-result-banner').classList.remove('hidden');
+            } else alert("못 찾았습니다.");
         }
 
-        function checkAdminPassword() { if (prompt("관리자 비밀번호를 입력하세요.") === "1989") openAdminModal(); else alert("비밀번호 불일치"); }
         function openAdminModal() {
-            document.getElementById('modal-content').innerHTML = `<h3 class="text-xl font-bold mb-4 text-white">명단 수정</h3><div class="max-h-80 overflow-y-auto pr-2 space-y-2">${traineesData.map((t, i) => `<div class="flex gap-2"><input class="w-16 bg-slate-800 p-1 rounded text-xs text-white" value="${t.number}" id="e-n-${i}"><input class="flex-1 bg-slate-800 p-1 rounded text-xs text-white" value="${t.name}" id="e-m-${i}"></div>`).join('')}</div><button onclick="saveChanges()" class="w-full mt-4 bg-emerald-600 py-2 rounded">저장</button>`;
+            document.getElementById('modal-content').innerHTML = `<h3 class='text-white font-bold mb-2'>명단 관리</h3><div class='max-h-60 overflow-y-auto space-y-1 mb-4' id='admin-list'>${traineesData.map((t, i) => `<div class='flex gap-1'><input class='w-12 bg-slate-800 p-1 text-xs' value='${t.number}' id='n-${i}'><input class='flex-1 bg-slate-800 p-1 text-xs' value='${t.name}' id='m-${i}'><button onclick='del(${i})' class='bg-red-900 px-2 text-xs'>X</button></div>`).join('')}</div><button onclick='add()' class='w-full bg-blue-600 py-1 text-sm'>+ 추가</button><button onclick='save()' class='w-full bg-emerald-600 py-1 mt-2 text-sm'>저장</button>`;
             document.getElementById('detail-modal').classList.remove('hidden');
         }
-        function saveChanges() {
-            traineesData.forEach((_, i) => { traineesData[i].number = document.getElementById(`e-n-${i}`).value; traineesData[i].name = document.getElementById(`e-m-${i}`).value; });
-            localStorage.setItem('traineeList', JSON.stringify(traineesData)); alert("저장됨"); location.reload();
-        }
+        function del(i) { traineesData.splice(i, 1); openAdminModal(); }
+        function add() { traineesData.push({number: "0", name: "신규"}); openAdminModal(); }
+        function save() { traineesData.forEach((_, i) => { traineesData[i].number = document.getElementById('n-'+i).value; traineesData[i].name = document.getElementById('m-'+i).value; }); localStorage.setItem('traineeList', JSON.stringify(traineesData)); location.reload(); }
+        function copyCurrentUrl() { navigator.clipboard.writeText(window.location.href); alert("주소가 복사되었습니다."); }
+        function checkAdminPassword() { if(prompt("비밀번호")==="1989") openAdminModal(); }
         function toggleModal(id) { document.getElementById(id).classList.toggle('hidden'); }
         function toggleViewDirection() { isParentView = !isParentView; renderBoard(); }
         function resetSearch() { document.querySelectorAll('.highlight-seat').forEach(e => e.classList.remove('highlight-seat')); document.getElementById('search-result-banner').classList.add('hidden'); }
-        function openCommanderModal() { alert("지휘자: 박철완 (76번)"); }
-        function openDetailModal(p) { toggleModal('detail-modal'); document.getElementById('modal-content').innerHTML = `<p class="text-white">${p.number}번 ${p.name}입니다.</p><button onclick="toggleModal('detail-modal')" class="mt-4 w-full bg-slate-700 py-2 rounded">닫기</button>`; }
+        function openDetailModal(p) { alert(`${p.number}번 ${p.name}입니다.`); }
         window.onload = renderBoard;
     </script>
 </body>
