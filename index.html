@@ -25,6 +25,17 @@
             color: #ffffff !important;
             z-index: 20;
         }
+        .selected-swap {
+            border-color: #3b82f6 !important;
+            background-color: #1e3a8a !important;
+            box-shadow: 0 0 12px rgba(59, 130, 246, 0.8);
+            z-index: 15;
+        }
+        .drag-over {
+            border-color: #10b981 !important;
+            background-color: #064e3b !important;
+            transform: scale(1.05);
+        }
         .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: #0f172a; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
@@ -49,6 +60,9 @@
                 </button>
                 <button onclick="toggleViewDirection()" id="view-toggle-btn" class="bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300 text-xs px-3 py-1.5 rounded-full border border-indigo-500/40 transition font-medium">
                     🔄 시점: 관람석(부모님) 기준
+                </button>
+                <button onclick="requestDragModeToggle()" id="drag-toggle-btn" class="bg-sky-500/20 hover:bg-sky-500/30 text-sky-300 text-xs px-3 py-1.5 rounded-full border border-sky-500/40 transition font-medium">
+                    🖐️ 자리 이동 모드: OFF
                 </button>
                 <button onclick="copyCurrentUrl()" class="bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-300 text-xs px-3 py-1.5 rounded-full border border-yellow-500/40 transition font-medium">
                     🔗 링크 복사
@@ -107,8 +121,9 @@
                 </div>
             </div>
 
-            <div class="text-right text-[11px] text-slate-400">
-                총 164명 (지휘자 1명 + 대열 163명)
+            <div class="flex justify-between items-center text-[11px] text-slate-400">
+                <span id="drag-status-msg" class="text-sky-400 font-medium hidden">🖐️ 관리자 권한 활성화: 카드를 끌어놓거나 선택하여 자리를 교환하세요.</span>
+                <span class="ml-auto">총 164명 (지휘자 1명 + 대열 163명)</span>
             </div>
 
             <div class="overflow-x-auto custom-scrollbar pb-2">
@@ -158,7 +173,7 @@
     </div>
     
     <script>
-        // 명단 데이터
+        // 기본 163명 명단 데이터 (1~7열 21명, 8열 16명 연속 배치)
         const defaultData = [
             // 제1제대 1열 (21명)
             { col: 1, row: 1,  number: "1",   name: "강민우", note: "" },
@@ -206,7 +221,7 @@
             { col: 2, row: 20, number: "59",  name: "박건욱", note: "" },
             { col: 2, row: 21, number: "60",  name: "박심윤", note: "" },
 
-            // 제1제대 3열 (20명)
+            // 제1제대 3열 (21명)
             { col: 3, row: 1,  number: "61",  name: "박상권", note: "" },
             { col: 3, row: 2,  number: "63",  name: "박승태", note: "" },
             { col: 3, row: 3,  number: "64",  name: "박시환", note: "" },
@@ -219,131 +234,167 @@
             { col: 3, row: 10, number: "71",  name: "박중정", note: "" },
             { col: 3, row: 11, number: "73",  name: "박진응", note: "" },
             { col: 3, row: 12, number: "75",  name: "박찬민", note: "" },
-            { col: 3, row: 14, number: "77",  name: "박태수", note: "" },
-            { col: 3, row: 15, number: "78",  name: "박현준", note: "" },
-            { col: 3, row: 16, number: "80",  name: "백승곤", note: "" },
-            { col: 3, row: 17, number: "81",  name: "백승규", note: "" },
-            { col: 3, row: 18, number: "83",  name: "서재경", note: "" },
-            { col: 3, row: 19, number: "84",  name: "서창빈", note: "" },
-            { col: 3, row: 20, number: "85",  name: "성유찬", note: "" },
-            { col: 3, row: 21, number: "86",  name: "소현섭", note: "" },
+            { col: 3, row: 13, number: "77",  name: "박태수", note: "" },
+            { col: 3, row: 14, number: "78",  name: "박현준", note: "" },
+            { col: 3, row: 15, number: "80",  name: "백승곤", note: "" },
+            { col: 3, row: 16, number: "81",  name: "백승규", note: "" },
+            { col: 3, row: 17, number: "83",  name: "서재경", note: "" },
+            { col: 3, row: 18, number: "84",  name: "서창빈", note: "" },
+            { col: 3, row: 19, number: "85",  name: "성유찬", note: "" },
+            { col: 3, row: 20, number: "86",  name: "소현섭", note: "" },
+            { col: 3, row: 21, number: "87",  name: "손호민", note: "" },
 
             // 제1제대 4열 (21명)
-            { col: 4, row: 1,  number: "87",  name: "손호민", note: "" },
-            { col: 4, row: 2,  number: "88",  name: "송수힌", note: "" },
-            { col: 4, row: 3,  number: "89",  name: "신연성", note: "" },
-            { col: 4, row: 4,  number: "90",  name: "신혁수", note: "" },
-            { col: 4, row: 5,  number: "92",  name: "안세민", note: "" },
-            { col: 4, row: 6,  number: "93",  name: "안창하", note: "" },
-            { col: 4, row: 7,  number: "94",  name: "양인권", note: "" },
-            { col: 4, row: 8,  number: "97",  name: "오세힌", note: "" },
-            { col: 4, row: 9,  number: "98",  name: "오태환", note: "" },
-            { col: 4, row: 10, number: "99",  name: "오형석", note: "" },
-            { col: 4, row: 11, number: "100", name: "우림",   note: "" },
-            { col: 4, row: 12, number: "101", name: "우성환", note: "" },
-            { col: 4, row: 13, number: "102", name: "유범진", note: "" },
-            { col: 4, row: 14, number: "104", name: "윤시진", note: "" },
-            { col: 4, row: 15, number: "105", name: "윤여찬", note: "" },
-            { col: 4, row: 16, number: "106", name: "윤정현", note: "" },
-            { col: 4, row: 17, number: "107", name: "윤지원", note: "" },
-            { col: 4, row: 18, number: "108", name: "윤현빈", note: "" },
-            { col: 4, row: 19, number: "109", name: "이강교", note: "" },
-            { col: 4, row: 20, number: "110", name: "이노영", note: "" },
-            { col: 4, row: 21, number: "111", name: "이도윤", note: "" },
+            { col: 4, row: 1,  number: "88",  name: "송수힌", note: "" },
+            { col: 4, row: 2,  number: "89",  name: "신연성", note: "" },
+            { col: 4, row: 3,  number: "90",  name: "신혁수", note: "" },
+            { col: 4, row: 4,  number: "92",  name: "안세민", note: "" },
+            { col: 4, row: 5,  number: "93",  name: "안창하", note: "" },
+            { col: 4, row: 6,  number: "94",  name: "양인권", note: "" },
+            { col: 4, row: 7,  number: "97",  name: "오세힌", note: "" },
+            { col: 4, row: 8,  number: "98",  name: "오태환", note: "" },
+            { col: 4, row: 9,  number: "99",  name: "오형석", note: "" },
+            { col: 4, row: 10, number: "100", name: "우림",   note: "" },
+            { col: 4, row: 11, number: "101", name: "우성환", note: "" },
+            { col: 4, row: 12, number: "102", name: "유범진", note: "" },
+            { col: 4, row: 13, number: "104", name: "윤시진", note: "" },
+            { col: 4, row: 14, number: "105", name: "윤여찬", note: "" },
+            { col: 4, row: 15, number: "106", name: "윤정현", note: "" },
+            { col: 4, row: 16, number: "107", name: "윤지원", note: "" },
+            { col: 4, row: 17, number: "108", name: "윤현빈", note: "" },
+            { col: 4, row: 18, number: "109", name: "이강교", note: "" },
+            { col: 4, row: 19, number: "110", name: "이노영", note: "" },
+            { col: 4, row: 20, number: "111", name: "이도윤", note: "" },
+            { col: 4, row: 21, number: "112", name: "이범수", note: "" },
 
             // 제2제대 5열 (21명)
-            { col: 5, row: 1,  number: "112", name: "이범수", note: "" },
-            { col: 5, row: 2,  number: "113", name: "이성민", note: "" },
-            { col: 5, row: 3,  number: "114", name: "이승민", note: "" },
-            { col: 5, row: 4,  number: "115", name: "이승재", note: "" },
-            { col: 5, row: 5,  number: "116", name: "이승찬", note: "" },
-            { col: 5, row: 6,  number: "117", name: "이승현", note: "" },
-            { col: 5, row: 7,  number: "118", name: "이연우", note: "" },
-            { col: 5, row: 8,  number: "119", name: "이유승", note: "" },
-            { col: 5, row: 9,  number: "120", name: "이윤호", note: "" },
-            { col: 5, row: 10, number: "121", name: "이재훈", note: "" },
-            { col: 5, row: 11, number: "122", name: "이정민", note: "" },
-            { col: 5, row: 12, number: "123", name: "이정수", note: "" },
-            { col: 5, row: 13, number: "124", name: "이종환", note: "" },
-            { col: 5, row: 14, number: "125", name: "이준성", note: "" },
-            { col: 5, row: 15, number: "127", name: "이지원", note: "" },
-            { col: 5, row: 16, number: "129", name: "이태윤", note: "" },
-            { col: 5, row: 17, number: "133", name: "장한빈", note: "" },
-            { col: 5, row: 18, number: "134", name: "점종훈", note: "" },
-            { col: 5, row: 19, number: "135", name: "정규현", note: "" },
-            { col: 5, row: 20, number: "137", name: "정무경", note: "" },
-            { col: 5, row: 21, number: "138", name: "정서헌", note: "" },
+            { col: 5, row: 1,  number: "113", name: "이성민", note: "" },
+            { col: 5, row: 2,  number: "114", name: "이승민", note: "" },
+            { col: 5, row: 3,  number: "115", name: "이승재", note: "" },
+            { col: 5, row: 4,  number: "116", name: "이승찬", note: "" },
+            { col: 5, row: 5,  number: "117", name: "이승현", note: "" },
+            { col: 5, row: 6,  number: "118", name: "이연우", note: "" },
+            { col: 5, row: 7,  number: "119", name: "이유승", note: "" },
+            { col: 5, row: 8,  number: "120", name: "이윤호", note: "" },
+            { col: 5, row: 9,  number: "121", name: "이재훈", note: "" },
+            { col: 5, row: 10, number: "122", name: "이정민", note: "" },
+            { col: 5, row: 11, number: "123", name: "이정수", note: "" },
+            { col: 5, row: 12, number: "124", name: "이종환", note: "" },
+            { col: 5, row: 13, number: "125", name: "이준성", note: "" },
+            { col: 5, row: 14, number: "127", name: "이지원", note: "" },
+            { col: 5, row: 15, number: "129", name: "이태윤", note: "" },
+            { col: 5, row: 16, number: "133", name: "장한빈", note: "" },
+            { col: 5, row: 17, number: "134", name: "점종훈", note: "" },
+            { col: 5, row: 18, number: "135", name: "정규현", note: "" },
+            { col: 5, row: 19, number: "137", name: "정무경", note: "" },
+            { col: 5, row: 20, number: "138", name: "정서헌", note: "" },
+            { col: 5, row: 21, number: "139", name: "정성우", note: "" },
 
             // 제2제대 6열 (21명)
-            { col: 6, row: 1,  number: "139", name: "정성우", note: "" },
-            { col: 6, row: 2,  number: "140", name: "정준호", note: "" },
-            { col: 6, row: 3,  number: "141", name: "정지오", note: "" },
-            { col: 6, row: 4,  number: "142", name: "정창민", note: "" },
-            { col: 6, row: 5,  number: "143", name: "정형관", note: "" },
-            { col: 6, row: 6,  number: "144", name: "조도연", note: "" },
-            { col: 6, row: 7,  number: "145", name: "조범주", note: "" },
-            { col: 6, row: 8,  number: "146", name: "조우빈", note: "" },
-            { col: 6, row: 9,  number: "147", name: "조형태", note: "" },
-            { col: 6, row: 10, number: "148", name: "주관영", note: "" },
-            { col: 6, row: 11, number: "149", name: "천원희", note: "" },
-            { col: 6, row: 12, number: "151", name: "최승훈", note: "" },
-            { col: 6, row: 13, number: "152", name: "최용준", note: "" },
-            { col: 6, row: 14, number: "153", name: "최우빈", note: "" },
-            { col: 6, row: 15, number: "154", name: "최윤우", note: "" },
-            { col: 6, row: 16, number: "157", name: "최정현", note: "" },
-            { col: 6, row: 17, number: "159", name: "최지호", note: "" },
-            { col: 6, row: 18, number: "161", name: "최호준", note: "" },
-            { col: 6, row: 19, number: "162", name: "하은율", note: "" },
-            { col: 6, row: 20, number: "163", name: "한대희", note: "" },
-            { col: 6, row: 21, number: "164", name: "한신혁", note: "" },
+            { col: 6, row: 1,  number: "140", name: "정준호", note: "" },
+            { col: 6, row: 2,  number: "141", name: "정지오", note: "" },
+            { col: 6, row: 3,  number: "142", name: "정창민", note: "" },
+            { col: 6, row: 4,  number: "143", name: "정형관", note: "" },
+            { col: 6, row: 5,  number: "144", name: "조도연", note: "" },
+            { col: 6, row: 6,  number: "145", name: "조범주", note: "" },
+            { col: 6, row: 7,  number: "146", name: "조우빈", note: "" },
+            { col: 6, row: 8,  number: "147", name: "조형태", note: "" },
+            { col: 6, row: 9,  number: "148", name: "주관영", note: "" },
+            { col: 6, row: 10, number: "149", name: "천원희", note: "" },
+            { col: 6, row: 11, number: "151", name: "최승훈", note: "" },
+            { col: 6, row: 12, number: "152", name: "최용준", note: "" },
+            { col: 6, row: 13, number: "153", name: "최우빈", note: "" },
+            { col: 6, row: 14, number: "154", name: "최윤우", note: "" },
+            { col: 6, row: 15, number: "157", name: "최정현", note: "" },
+            { col: 6, row: 16, number: "159", name: "최지호", note: "" },
+            { col: 6, row: 17, number: "161", name: "최호준", note: "" },
+            { col: 6, row: 18, number: "162", name: "하은율", note: "" },
+            { col: 6, row: 19, number: "163", name: "한대희", note: "" },
+            { col: 6, row: 20, number: "164", name: "한신혁", note: "" },
+            { col: 6, row: 21, number: "165", name: "한영민", note: "" },
 
             // 제2제대 7열 (21명)
-            { col: 7, row: 1,  number: "165", name: "한영민", note: "" },
-            { col: 7, row: 2,  number: "167", name: "한태영", note: "" },
-            { col: 7, row: 3,  number: "170", name: "홍지현", note: "" },
-            { col: 7, row: 4,  number: "171", name: "홍현호", note: "" },
-            { col: 7, row: 5,  number: "172", name: "황태빈", note: "" },
-            { col: 7, row: 6,  number: "174", name: "강지우", note: "" },
-            { col: 7, row: 7,  number: "175", name: "강민아", note: "" },
-            { col: 7, row: 8,  number: "176", name: "고준우", note: "" },
-            { col: 7, row: 9,  number: "178", name: "김솔민", note: "" },
-            { col: 7, row: 10, number: "181", name: "김지민", note: "" },
-            { col: 7, row: 11, number: "183", name: "박인혁", note: "" },
-            { col: 7, row: 12, number: "184", name: "송연우", note: "" },
-            { col: 7, row: 13, number: "185", name: "신승기", note: "" },
-            { col: 7, row: 14, number: "186", name: "오서준", note: "" },
-            { col: 7, row: 15, number: "187", name: "이도현", note: "" },
-            { col: 7, row: 16, number: "188", name: "이민성", note: "" },
-            { col: 7, row: 17, number: "189", name: "임종화", note: "" },
-            { col: 7, row: 18, number: "190", name: "장민성", note: "" },
-            { col: 7, row: 19, number: "191", name: "전창현", note: "" },
-            { col: 7, row: 20, number: "192", name: "정정훈", note: "" },
-            { col: 7, row: 21, number: "194", name: "최우진", note: "" },
+            { col: 7, row: 1,  number: "167", name: "한태영", note: "" },
+            { col: 7, row: 2,  number: "170", name: "홍지현", note: "" },
+            { col: 7, row: 3,  number: "171", name: "홍현호", note: "" },
+            { col: 7, row: 4,  number: "172", name: "황태빈", note: "" },
+            { col: 7, row: 5,  number: "174", name: "강지우", note: "" },
+            { col: 7, row: 6,  number: "175", name: "강민아", note: "" },
+            { col: 7, row: 7,  number: "176", name: "고준우", note: "" },
+            { col: 7, row: 8,  number: "178", name: "김솔민", note: "" },
+            { col: 7, row: 9,  number: "181", name: "김지민", note: "" },
+            { col: 7, row: 10, number: "183", name: "박인혁", note: "" },
+            { col: 7, row: 11, number: "184", name: "송연우", note: "" },
+            { col: 7, row: 12, number: "185", name: "신승기", note: "" },
+            { col: 7, row: 13, number: "186", name: "오서준", note: "" },
+            { col: 7, row: 14, number: "187", name: "이도현", note: "" },
+            { col: 7, row: 15, number: "188", name: "이민성", note: "" },
+            { col: 7, row: 16, number: "189", name: "임종화", note: "" },
+            { col: 7, row: 17, number: "190", name: "장민성", note: "" },
+            { col: 7, row: 18, number: "191", name: "전창현", note: "" },
+            { col: 7, row: 19, number: "192", name: "정정훈", note: "" },
+            { col: 7, row: 20, number: "194", name: "최우진", note: "" },
+            { col: 7, row: 21, number: "195", name: "최준혁", note: "" },
 
-            // 제2제대 8열 (17명)
-            { col: 8, row: 1,  number: "195", name: "최준혁", note: "" },
-            { col: 8, row: 2,  number: "196", name: "홍준혁", note: "" },
-            { col: 8, row: 3,  number: "197", name: "김건하", note: "" },
-            { col: 8, row: 4,  number: "198", name: "김남운", note: "" },
-            { col: 8, row: 5,  number: "200", name: "김상현", note: "" },
-            { col: 8, row: 6,  number: "202", name: "남두환", note: "" },
-            { col: 8, row: 7,  number: "205", name: "박지원", note: "" },
-            { col: 8, row: 8,  number: "206", name: "변승우", note: "" },
-            { col: 8, row: 9,  number: "208", name: "오준영", note: "" },
-            { col: 8, row: 10, number: "211", name: "이강",   note: "" },
-            { col: 8, row: 11, number: "212", name: "이정규", note: "" },
-            { col: 8, row: 12, number: "214", name: "이진우", note: "" },
-            { col: 8, row: 13, number: "216", name: "이한빈", note: "" },
-            { col: 8, row: 14, number: "218", name: "임철희", note: "" },
-            { col: 8, row: 15, number: "219", name: "정다훈", note: "" },
-            { col: 8, row: 16, number: "221", name: "지승효", note: "" },
-            { col: 8, row: 17, number: "224", name: "최효명", note: "" }
+            // 제2제대 8열 (16명)
+            { col: 8, row: 1,  number: "196", name: "홍준혁", note: "" },
+            { col: 8, row: 2,  number: "197", name: "김건하", note: "" },
+            { col: 8, row: 3,  number: "198", name: "김남운", note: "" },
+            { col: 8, row: 4,  number: "200", name: "김상현", note: "" },
+            { col: 8, row: 5,  number: "202", name: "남두환", note: "" },
+            { col: 8, row: 6,  number: "205", name: "박지원", note: "" },
+            { col: 8, row: 7,  number: "206", name: "변승우", note: "" },
+            { col: 8, row: 8,  number: "208", name: "오준영", note: "" },
+            { col: 8, row: 9,  number: "211", name: "이강",   note: "" },
+            { col: 8, row: 10, number: "212", name: "이정규", note: "" },
+            { col: 8, row: 11, number: "214", name: "이진우", note: "" },
+            { col: 8, row: 12, number: "216", name: "이한빈", note: "" },
+            { col: 8, row: 13, number: "218", name: "임철희", note: "" },
+            { col: 8, row: 14, number: "219", name: "정다훈", note: "" },
+            { col: 8, row: 15, number: "221", name: "지승효", note: "" },
+            { col: 8, row: 16, number: "224", name: "최효명", note: "" }
         ];
 
         const TOTAL_COLS = 8;
         const TOTAL_ROWS = 21;
         let traineesData = JSON.parse(localStorage.getItem('traineeList')) || [...defaultData];
         let isParentView = true;
+
+        // 드래그 및 위치 교환 상태
+        let isDragMode = false;
+        let selectedSeatForSwap = null;
+        let draggedSeatSource = null;
+
+        // 관리자 비밀번호 확인 후 자리 이동 모드 토글
+        function requestDragModeToggle() {
+            if (!isDragMode) {
+                const pass = prompt("자리 이동 모드를 활성화하려면 관리자 비밀번호를 입력하세요.");
+                if (pass === "1989") {
+                    setDragMode(true);
+                } else if (pass !== null) {
+                    alert("비밀번호가 일치하지 않습니다.");
+                }
+            } else {
+                setDragMode(false);
+            }
+        }
+
+        function setDragMode(enable) {
+            isDragMode = enable;
+            selectedSeatForSwap = null;
+            const btn = document.getElementById('drag-toggle-btn');
+            const msg = document.getElementById('drag-status-msg');
+            if (isDragMode) {
+                btn.className = "bg-sky-500 text-white font-bold text-xs px-3 py-1.5 rounded-full border border-sky-400 transition shadow-lg shadow-sky-900/40";
+                btn.innerText = "🖐️ 자리 이동 모드: ON";
+                msg.classList.remove('hidden');
+            } else {
+                btn.className = "bg-sky-500/20 hover:bg-sky-500/30 text-sky-300 text-xs px-3 py-1.5 rounded-full border border-sky-500/40 transition font-medium";
+                btn.innerText = "🖐️ 자리 이동 모드: OFF";
+                msg.classList.add('hidden');
+            }
+            renderBoard();
+        }
 
         // 배치도 렌더링
         function renderBoard() {
@@ -372,17 +423,125 @@
                     const isBorderRight = (c === 4);
                     
                     if (person) {
-                        seatBtn.className = `p-1 rounded border text-center text-[10px] transition ${echelonBg} border-slate-700 hover:border-emerald-500 ${isBorderRight ? 'mr-0.5 border-r-2 border-r-indigo-500' : ''}`;
-                        seatBtn.onclick = () => openDetailModal(person);
+                        const isSelected = selectedSeatForSwap && selectedSeatForSwap.col === colIndex && selectedSeatForSwap.row === r;
+                        seatBtn.className = `p-1 rounded border text-center text-[10px] transition ${isSelected ? 'selected-swap' : echelonBg} border-slate-700 hover:border-emerald-500 ${isBorderRight ? 'mr-0.5 border-r-2 border-r-indigo-500' : ''}`;
                         seatBtn.id = `seat-${colIndex}-${r}`;
                         seatBtn.innerHTML = `<span class="block text-[8px] text-slate-400 font-mono">${person.number}</span><span class="font-bold text-slate-100">${person.name}</span>`;
+                        
+                        if (isDragMode) {
+                            seatBtn.draggable = true;
+                            seatBtn.ondragstart = (e) => handleDragStart(e, colIndex, r);
+                            seatBtn.ondragover = (e) => handleDragOver(e, seatBtn);
+                            seatBtn.ondragleave = () => seatBtn.classList.remove('drag-over');
+                            seatBtn.ondrop = (e) => handleDrop(e, colIndex, r, seatBtn);
+                        } else {
+                            seatBtn.draggable = false;
+                        }
+
+                        seatBtn.onclick = () => {
+                            if (isDragMode) {
+                                handleSeatClickForSwap(colIndex, r);
+                            } else {
+                                openDetailModal(person);
+                            }
+                        };
                     } else {
                         seatBtn.className = `bg-slate-900/50 border border-slate-800/80 rounded ${isBorderRight ? 'mr-0.5 border-r-2 border-r-indigo-500' : ''}`;
-                        seatBtn.disabled = true;
+                        seatBtn.id = `seat-${colIndex}-${r}`;
+                        
+                        if (isDragMode) {
+                            seatBtn.ondragover = (e) => handleDragOver(e, seatBtn);
+                            seatBtn.ondragleave = () => seatBtn.classList.remove('drag-over');
+                            seatBtn.ondrop = (e) => handleDrop(e, colIndex, r, seatBtn);
+                        }
+                        
+                        seatBtn.onclick = () => {
+                            if (isDragMode && selectedSeatForSwap) {
+                                handleSeatClickForSwap(colIndex, r);
+                            }
+                        };
                     }
                     seatGrid.appendChild(seatBtn);
                 }
             }
+        }
+
+        // 드래그 앤 드롭 핸들러
+        function handleDragStart(e, col, row) {
+            if (!isDragMode) return;
+            draggedSeatSource = { col, row };
+            e.dataTransfer.setData('text/plain', JSON.stringify({ col, row }));
+            e.dataTransfer.effectAllowed = 'move';
+        }
+
+        function handleDragOver(e, elem) {
+            if (!isDragMode) return;
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+            elem.classList.add('drag-over');
+        }
+
+        function handleDrop(e, targetCol, targetRow, elem) {
+            if (!isDragMode) return;
+            e.preventDefault();
+            elem.classList.remove('drag-over');
+            
+            let src = draggedSeatSource;
+            if (!src) {
+                try {
+                    src = JSON.parse(e.dataTransfer.getData('text/plain'));
+                } catch(err) { return; }
+            }
+
+            if (src && (src.col !== targetCol || src.row !== targetRow)) {
+                swapOrMoveSeat(src.col, src.row, targetCol, targetRow);
+            }
+            draggedSeatSource = null;
+        }
+
+        // 클릭 기반 교환
+        function handleSeatClickForSwap(col, row) {
+            if (!selectedSeatForSwap) {
+                const person = traineesData.find(t => t.col === col && t.row === row);
+                if (person) {
+                    selectedSeatForSwap = { col, row };
+                    renderBoard();
+                }
+            } else {
+                if (selectedSeatForSwap.col !== col || selectedSeatForSwap.row !== row) {
+                    swapOrMoveSeat(selectedSeatForSwap.col, selectedSeatForSwap.row, col, row);
+                }
+                selectedSeatForSwap = null;
+                renderBoard();
+            }
+        }
+
+        // 자리 교환 / 이동 연산
+        function swapOrMoveSeat(srcCol, srcRow, tarCol, tarRow) {
+            const srcPerson = traineesData.find(t => t.col == srcCol && t.row == srcRow);
+            const tarPerson = traineesData.find(t => t.col == tarCol && t.row == tarRow);
+
+            if (!srcPerson) return;
+
+            if (tarPerson) {
+                srcPerson.col = tarCol;
+                srcPerson.row = tarRow;
+                tarPerson.col = srcCol;
+                tarPerson.row = srcRow;
+            } else {
+                srcPerson.col = tarCol;
+                srcPerson.row = tarRow;
+            }
+
+            localStorage.setItem('traineeList', JSON.stringify(traineesData));
+            renderBoard();
+
+            const banner = document.getElementById('search-result-banner');
+            banner.className = "p-2.5 rounded-lg text-xs text-center font-semibold bg-sky-500/20 text-sky-300 border border-sky-500/30";
+            banner.innerHTML = tarPerson 
+                ? `🔄 <strong>[${srcPerson.name}]</strong> 후보생과 <strong>[${tarPerson.name}]</strong> 후보생의 자리가 교환되었습니다.`
+                : `📍 <strong>[${srcPerson.name}]</strong> 후보생이 <strong>${tarCol}열 ${tarRow}행</strong> 위치로 이동되었습니다.`;
+            banner.classList.remove('hidden');
         }
 
         // 검색 실행
