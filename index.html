@@ -5,17 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>특부후 264기 임관식 배치도 조회</title>
 
-    <!-- Open Graph (카카오톡 미리보기 카드 설정) -->
+    <!-- Open Graph (카카오톡 미리보기 카드) -->
     <meta property="og:type" content="website">
     <meta property="og:title" content="특부후 264기 임관식 좌석 배치도">
-    <meta property="og:description" content="후보생 성명과 생년월일을 입력하여 좌석 위치를 조회하세요.">
+    <meta property="og:description" content="후보생의 교번 또는 성명을 입력하여 좌석 위치를 확인하세요.">
     <meta property="og:image" content="https://images.unsplash.com/photo-1541872703-74c5e44368f9?w=800">
     <meta property="og:locale" content="ko_KR">
 
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Kakao SDK -->
-    <script src="https://developers.kakao.com/sdk/js/kakao.min.js"></script>
 
     <style>
         @keyframes pulse-glow {
@@ -52,7 +50,7 @@
                 특부후 264기 임관식 배치도 조회
             </h1>
             <p class="text-xs sm:text-sm text-slate-400">
-                후보생의 성명과 생년월일을 입력하여 좌석 위치를 정확히 확인하세요.
+                후보생의 교번 또는 성명을 입력하여 좌석 위치를 정확히 확인하세요.
             </p>
             
             <div class="flex flex-wrap justify-center items-center gap-2 pt-1">
@@ -62,22 +60,22 @@
                 <button onclick="toggleViewDirection()" id="view-toggle-btn" class="bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300 text-xs px-3 py-1.5 rounded-full border border-indigo-500/40 transition font-medium">
                     시점: 관람석(부모님) 기준
                 </button>
-                <button onclick="shareToKakao()" class="bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-300 text-xs px-3 py-1.5 rounded-full border border-yellow-500/40 transition font-medium">
-                    카카오톡 공유
+                <button onclick="copyCurrentUrl()" class="bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-300 text-xs px-3 py-1.5 rounded-full border border-yellow-500/40 transition font-medium">
+                    링크 복사
                 </button>
             </div>
         </header>
 
-        <!-- 검색 영역 -->
+        <!-- 검색 영역 (교번 + 성명) -->
         <section class="bg-slate-800/80 p-4 rounded-xl border border-slate-700/60 shadow-inner">
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                    <label class="block text-xs font-semibold text-slate-300 mb-1">후보생 이름</label>
-                    <input type="text" id="search-name" placeholder="예: 우철완" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-emerald-500">
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">교번</label>
+                    <input type="text" id="search-number" placeholder="예: 76" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-emerald-500">
                 </div>
                 <div>
-                    <label class="block text-xs font-semibold text-slate-300 mb-1">생년월일 (6자리)</label>
-                    <input type="text" id="search-birth" placeholder="예: 010101" maxlength="6" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-emerald-500">
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">성명</label>
+                    <input type="text" id="search-name" placeholder="예: 박철완" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-emerald-500">
                 </div>
             </div>
 
@@ -94,16 +92,17 @@
         <!-- 검색 결과 알림 -->
         <div id="search-result-banner" class="hidden p-3 rounded-lg text-sm text-center font-semibold"></div>
 
-        <!-- 단상 및 지휘자 영역 -->
+        <!-- 단상 영역 -->
         <section class="space-y-3 text-center">
             <div class="bg-slate-100 text-slate-900 font-extrabold text-base sm:text-lg py-2.5 rounded-xl shadow-md tracking-wider">
                 단 상 ( 사 열 대 )
             </div>
 
+            <!-- 단상 앞 지휘자 (76번 박철완 전용 카드) -->
             <div class="max-w-xs mx-auto text-xs">
-                <div class="bg-slate-800 border border-emerald-500/50 p-2.5 rounded-lg shadow-md">
-                    <span class="text-emerald-400 font-bold block mb-0.5">교육대 지휘자 (통합)</span>
-                    <span class="text-slate-100 font-semibold text-sm">우철완 (076번)</span>
+                <div id="commander-card" class="bg-slate-800 border border-emerald-500/50 p-2.5 rounded-lg shadow-md transition cursor-pointer" onclick="openCommanderModal()">
+                    <span class="text-emerald-400 font-bold block mb-0.5">지휘자</span>
+                    <span class="text-slate-100 font-bold text-sm">76번 박철완</span>
                 </div>
             </div>
         </section>
@@ -120,7 +119,7 @@
             </div>
 
             <div class="text-right text-[11px] text-slate-400">
-                총 164명 (8열 x 21행 배치구역)
+                총 164명 (지휘자 1명 + 대열 163명)
             </div>
 
             <div class="overflow-x-auto custom-scrollbar pb-2">
@@ -155,9 +154,9 @@
                 <button onclick="toggleModal('notice-modal')" class="text-slate-400 hover:text-white text-xl">&times;</button>
             </h3>
             <div class="space-y-3 text-xs sm:text-sm text-slate-300 leading-relaxed">
-                <p>1. <strong>검색 방법</strong>: 후보생 성명과 생년월일(6자리)을 정확히 입력 후 [조회하기] 버튼을 누르면 위치가 주황색으로 강조됩니다.</p>
-                <p>2. <strong>제대 구별</strong>: 사열대 기준 <strong>좌측 4개 열이 제1제대</strong>, <strong>우측 4개 열이 제2제대</strong>입니다.</p>
-                <p>3. <strong>좌석 번호</strong>: `열-행` 표기 방식입니다. (예: `7-5` = 7열 5행)</p>
+                <p>1. <strong>검색 방법</strong>: 후보생의 교번 또는 성명을 입력 후 [조회하기] 버튼을 누르면 위치가 주황색으로 강조됩니다.</p>
+                <p>2. <strong>지휘자 위치</strong>: 76번 박철완 후보생은 '지휘자' 위치에 편성되어 있습니다.</p>
+                <p>3. <strong>제대 구별</strong>: 사열대 기준 <strong>좌측 4개 열이 제1제대</strong>, <strong>우측 4개 열이 제2제대</strong>입니다.</p>
                 <p>4. <strong>시점 안내</strong>: 기본 설정은 관람석에서 단상을 바라보는 부모님 시점입니다.</p>
             </div>
             <button onclick="toggleModal('notice-modal')" class="w-full bg-amber-600 hover:bg-amber-500 text-white font-semibold py-2 rounded-lg text-sm transition">
@@ -167,18 +166,33 @@
     </div>
 
     <script>
-        const TOTAL_TRAINEES = 164;
         const TOTAL_COLS = 8;
         const TOTAL_ROWS = 21;
 
-        let traineesData = [];
+        const rawTraineesList = [
+            { number: "1", name: "강민우" }, { number: "3", name: "고경민" }, { number: "5", name: "곽민혁" }, { number: "7", name: "구민제" }, { number: "8", name: "구승범" }, { number: "9", name: "구휘성" }, { number: "10", name: "권광림" }, { number: "11", name: "권선우" }, { number: "12", name: "권성찬" }, { number: "13", name: "김강휘" }, { number: "14", name: "김건우" }, { number: "15", name: "김경모" }, { number: "18", name: "김대현" }, { number: "19", name: "김덕현" }, { number: "20", name: "김도현" }, { number: "21", name: "김동현" }, { number: "22", name: "김동형" }, { number: "26", name: "김민준A" }, { number: "28", name: "김병수" }, { number: "29", name: "김승하" }, { number: "33", name: "김어진" },
+            { number: "34", name: "김영광" }, { number: "36", name: "김원철" }, { number: "38", name: "김윤찬" }, { number: "39", name: "김인수" }, { number: "40", name: "김종빈" }, { number: "41", name: "김준권" }, { number: "43", name: "김준혁B" }, { number: "44", name: "김진우" }, { number: "46", name: "김태규" }, { number: "47", name: "김태연" }, { number: "48", name: "김하진" }, { number: "49", name: "김현민" }, { number: "51", name: "김현우" }, { number: "53", name: "김현준A" }, { number: "54", name: "김현준B" }, { number: "55", name: "김현중" }, { number: "56", name: "나겸우" }, { number: "57", name: "나시후" }, { number: "58", name: "류호식" }, { number: "59", name: "박건욱" }, { number: "60", name: "박심윤" },
+            { number: "61", name: "박상권" }, { number: "63", name: "박승태" }, { number: "64", name: "박시환" }, { number: "65", name: "박예찬" }, { number: "66", name: "박정수" }, { number: "67", name: "박제연" }, { number: "68", name: "박주성" }, { number: "69", name: "박주형" }, { number: "70", name: "박준성" }, { number: "71", name: "박중정" }, { number: "73", name: "박진응" }, { number: "75", name: "박찬민" }, { number: "76", name: "박철완" }, { number: "77", name: "박태수" }, { number: "78", name: "박현준" }, { number: "80", name: "백승곤" }, { number: "81", name: "백승규" }, { number: "83", name: "서재경" }, { number: "84", name: "서창빈" }, { number: "85", name: "성유찬" }, { number: "86", name: "소현섭" },
+            { number: "87", name: "손호민" }, { number: "88", name: "송수힌" }, { number: "89", name: "신연성" }, { number: "90", name: "신혁수" }, { number: "92", name: "안세민" }, { number: "93", name: "안창하" }, { number: "94", name: "양인권" }, { number: "97", name: "오세힌" }, { number: "98", name: "오태환" }, { number: "99", name: "오형석" }, { number: "100", name: "우림" }, { number: "101", name: "우성환" }, { number: "102", name: "유범진" }, { number: "104", name: "윤시진" }, { number: "105", name: "윤여찬" }, { number: "106", name: "윤정현" }, { number: "107", name: "윤지원" }, { number: "108", name: "윤현빈" }, { number: "109", name: "이강교" }, { number: "110", name: "이노영" }, { number: "111", name: "이도윤" },
+            { number: "112", name: "이범수" }, { number: "113", name: "이성민" }, { number: "114", name: "이승민" }, { number: "115", name: "이승재" }, { number: "116", name: "이승찬" }, { number: "117", name: "이승현" }, { number: "118", name: "이연우" }, { number: "119", name: "이유승" }, { number: "120", name: "이윤호" }, { number: "121", name: "이재훈" }, { number: "122", name: "이정민" }, { number: "123", name: "이정수" }, { number: "124", name: "이종환" }, { number: "125", name: "이준성" }, { number: "127", name: "이지원" }, { number: "129", name: "이태윤" }, { number: "133", name: "장한빈" }, { number: "134", name: "점종훈" }, { number: "135", name: "정규현" }, { number: "137", name: "정무경" }, { number: "138", name: "정서헌" },
+            { number: "139", name: "정성우" }, { number: "140", name: "정준호" }, { number: "141", name: "정지오" }, { number: "142", name: "정창민" }, { number: "143", name: "정형관" }, { number: "144", name: "조도연" }, { number: "145", name: "조범주" }, { number: "146", name: "조우빈" }, { number: "147", name: "조형태" }, { number: "148", name: "주관영" }, { number: "149", name: "천원희" }, { number: "151", name: "최승훈" }, { number: "152", name: "최용준" }, { number: "153", name: "최우빈" }, { number: "154", name: "최윤우" }, { number: "157", name: "최정현" }, { number: "159", name: "최지호" }, { number: "161", name: "최호준" }, { number: "162", name: "하은율" }, { number: "163", name: "한대희" }, { number: "164", name: "한신혁" },
+            { number: "165", name: "한영민" }, { number: "167", name: "한태영" }, { number: "170", name: "홍지현" }, { number: "171", name: "홍현호" }, { number: "172", name: "황태빈" }, { number: "174", name: "강지우" }, { number: "175", name: "강민아" }, { number: "176", name: "고준우" }, { number: "178", name: "김솔민" }, { number: "181", name: "김지민" }, { number: "183", name: "박인혁" }, { number: "184", name: "송연우" }, { number: "185", name: "신승기" }, { number: "186", name: "오서준" }, { number: "187", name: "이도현" }, { number: "188", name: "이민성" }, { number: "189", name: "임종화" }, { number: "190", name: "장민성" }, { number: "191", name: "전창현" }, { number: "192", name: "정정훈" }, { number: "194", name: "최우진" },
+            { number: "195", name: "최준혁" }, { number: "196", name: "홍준혁" }, { number: "197", name: "김건하" }, { number: "198", name: "김남운" }, { number: "200", name: "김상현" }, { number: "202", name: "남두환" }, { number: "205", name: "박지원" }, { number: "206", name: "변승우" }, { number: "208", name: "오준영" }, { number: "211", name: "이강" }, { number: "212", name: "이정규" }, { number: "214", name: "이진우" }, { number: "216", name: "이한빈" }, { number: "218", name: "임철희" }, { number: "219", name: "정다훈" }, { number: "221", name: "지승효" }, { number: "224", name: "최효명" }
+        ];
+
+        const gridTrainees = rawTraineesList.filter(t => t.number !== "76");
+        const traineesData = gridTrainees.map((item, index) => {
+            const col = Math.floor(index / 21) + 1;
+            const row = (index % 21) + 1;
+            return { ...item, col: col, row: row, seatCode: `${col}-${row}` };
+        });
+
         let isParentView = true;
 
-        function shareToKakao() {
-            const currentUrl = window.location.href;
+        function copyCurrentUrl() {
             const dummy = document.createElement('input');
             document.body.appendChild(dummy);
-            dummy.value = currentUrl;
+            dummy.value = window.location.href;
             dummy.select();
             document.execCommand('copy');
             document.body.removeChild(dummy);
@@ -187,47 +201,6 @@
             banner.className = "p-3 rounded-lg text-sm text-center font-semibold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30";
             banner.innerText = "웹사이트 주소가 복사되었습니다. 카카오톡 채팅방에 붙여넣기(Ctrl+V) 하세요.";
             banner.classList.remove('hidden');
-        }
-
-        // 명단 데이터 생성 (실제 운영 시 이 배열의 객체를 전체 164명 명단으로 업데이트하세요)
-        function generateSampleData() {
-            const familyNames = ["김", "이", "박", "최", "정", "강", "조", "윤", "장", "임", "한", "오", "서", "신", "권", "황"];
-            const givenNames = ["민준", "서준", "도윤", "예준", "시우", "하준", "주원", "지호", "지후", "준서", "건우", "우진", "현우", "진우", "동현"];
-
-            let idCounter = 1;
-            for (let r = 1; r <= TOTAL_ROWS; r++) {
-                for (let c = 1; c <= TOTAL_COLS; c++) {
-                    if (idCounter > TOTAL_TRAINEES) break;
-
-                    const unitName = c <= 4 ? "1제대" : "2제대";
-                    const numStr = String(idCounter).padStart(3, '0');
-                    
-                    let nameStr = familyNames[Math.floor(Math.random() * familyNames.length)] + 
-                                  givenNames[Math.floor(Math.random() * givenNames.length)];
-                    let roleStr = "일반 후보생";
-
-                    if (idCounter === 76) {
-                        nameStr = "우철완";
-                        roleStr = "교육대 지휘자";
-                    }
-
-                    const birth = `${String(Math.floor(Math.random() * 5) + 1).padStart(2, '0')}0${Math.floor(Math.random() * 8) + 1}15`;
-
-                    traineesData.push({
-                        id: idCounter,
-                        name: nameStr,
-                        number: numStr,
-                        birthdate: birth,
-                        unit: unitName,
-                        col: c,
-                        row: r,
-                        seatCode: `${c}-${r}`,
-                        role: roleStr
-                    });
-
-                    idCounter++;
-                }
-            }
         }
 
         function renderBoard() {
@@ -261,7 +234,7 @@
                         seatBtn.className = `p-2 rounded-md border text-center transition flex flex-col items-center justify-center min-h-[46px] bg-slate-800/70 border-slate-700/80 hover:border-emerald-500 hover:bg-slate-800 ${borderClass}`;
                         seatBtn.onclick = () => openDetailModal(person);
                         seatBtn.innerHTML = `
-                            <span class="text-[10px] text-slate-400 font-mono">${person.seatCode}</span>
+                            <span class="text-[10px] text-slate-400 font-mono">${person.number}번 (${person.col}-${person.row})</span>
                             <span class="text-xs font-bold text-slate-100">${person.name}</span>
                         `;
                     } else {
@@ -276,41 +249,58 @@
         }
 
         function executeSearch() {
+            const numberVal = document.getElementById('search-number').value.trim();
             const nameVal = document.getElementById('search-name').value.trim();
-            const birthVal = document.getElementById('search-birth').value.trim();
             const banner = document.getElementById('search-result-banner');
+            const commanderCard = document.getElementById('commander-card');
 
             document.querySelectorAll('.highlight-seat').forEach(el => el.classList.remove('highlight-seat'));
 
-            if (!nameVal || !birthVal) {
+            if (!numberVal && !nameVal) {
                 banner.className = "p-3 rounded-lg text-sm text-center font-semibold bg-amber-500/20 text-amber-300 border border-amber-500/30";
-                banner.innerText = "후보생 이름과 생년월일(6자리)을 모두 입력해 주세요.";
+                banner.innerText = "교번 또는 성명을 입력해 주세요.";
                 banner.classList.remove('hidden');
                 return;
             }
 
-            const match = traineesData.find(t => t.name === nameVal && t.birthdate === birthVal);
+            const isMatchCommander = (numberVal === "76" || nameVal.includes("박철완"));
+
+            if (isMatchCommander) {
+                commanderCard.classList.add('highlight-seat');
+                commanderCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                banner.className = "p-3 rounded-lg text-sm text-center font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30";
+                banner.innerHTML = `[76번 박철완] 후보생 위치: <strong>지휘자</strong>`;
+                banner.classList.remove('hidden');
+                return;
+            }
+
+            const match = traineesData.find(t => {
+                const matchNumber = !numberVal || t.number === numberVal;
+                const matchName = !nameVal || t.name.includes(nameVal);
+                return matchNumber && matchName;
+            });
 
             if (match) {
-                const targetSeat = document.getElementById(`seat-${match.seatCode}`);
+                const seatCode = `${match.col}-${match.row}`;
+                const targetSeat = document.getElementById(`seat-${seatCode}`);
                 if (targetSeat) {
                     targetSeat.classList.add('highlight-seat');
                     targetSeat.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
-
+                    const unitName = match.col <= 4 ? "제1제대" : "제2제대";
                     banner.className = "p-3 rounded-lg text-sm text-center font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30";
-                    banner.innerHTML = `[${match.name}] 후보생 위치: <strong>${match.unit} ${match.col}열 ${match.row}행 (${match.seatCode})</strong>`;
+                    banner.innerHTML = `[${match.number}번 ${match.name}] 후보생 위치: <strong>${unitName} ${match.col}열 ${match.row}행</strong>`;
                     banner.classList.remove('hidden');
                 }
             } else {
                 banner.className = "p-3 rounded-lg text-sm text-center font-semibold bg-rose-500/20 text-rose-300 border border-rose-500/30";
-                banner.innerText = "일치하는 후보생 정보를 찾을 수 없습니다. 이름과 생년월일을 다시 확인하세요.";
+                banner.innerText = "일치하는 후보생 정보를 찾을 수 없습니다. 교번이나 성명을 다시 확인하세요.";
                 banner.classList.remove('hidden');
             }
         }
 
         function resetSearch() {
+            document.getElementById('search-number').value = '';
             document.getElementById('search-name').value = '';
-            document.getElementById('search-birth').value = '';
             document.querySelectorAll('.highlight-seat').forEach(el => el.classList.remove('highlight-seat'));
             document.getElementById('search-result-banner').classList.add('hidden');
         }
@@ -327,25 +317,34 @@
             modal.classList.toggle('hidden');
         }
 
-        function openDetailModal(person) {
+        function openCommanderModal() {
             const content = document.getElementById('modal-content');
             content.innerHTML = `
                 <div class="bg-slate-800 p-3 rounded-lg space-y-1.5 border border-slate-700">
-                    <div class="flex justify-between"><span class="text-slate-400">성명:</span> <span class="font-bold text-emerald-400">${person.name}</span></div>
-                    <div class="flex justify-between"><span class="text-slate-400">소속:</span> <span class="font-semibold">${person.unit}</span></div>
-                    <div class="flex justify-between"><span class="text-slate-400">좌석 위치:</span> <span class="font-bold text-amber-400">${person.col}열 ${person.row}행 (${person.seatCode})</span></div>
-                    <div class="flex justify-between"><span class="text-slate-400">교번:</span> <span class="font-mono">${person.number}번</span></div>
-                    <div class="flex justify-between"><span class="text-slate-400">생년월일:</span> <span class="font-mono">${person.birthdate}</span></div>
-                    <div class="flex justify-between"><span class="text-slate-400">직책:</span> <span>${person.role}</span></div>
+                    <div class="flex justify-between"><span class="text-slate-400">교번:</span> <span class="font-mono font-bold text-slate-100">76번</span></div>
+                    <div class="flex justify-between"><span class="text-slate-400">성명:</span> <span class="font-bold text-emerald-400">박철완</span></div>
+                    <div class="flex justify-between"><span class="text-slate-400">직책:</span> <span class="font-bold text-amber-400">지휘자</span></div>
+                    <div class="flex justify-between"><span class="text-slate-400">위치:</span> <span class="font-semibold text-slate-200">단상 바로 앞 독립 위치</span></div>
                 </div>
             `;
             toggleModal('detail-modal');
         }
 
-        window.onload = function() {
-            generateSampleData();
-            renderBoard();
-        };
+        function openDetailModal(person) {
+            const unitName = person.col <= 4 ? "제1제대" : "제2제대";
+            const content = document.getElementById('modal-content');
+            content.innerHTML = `
+                <div class="bg-slate-800 p-3 rounded-lg space-y-1.5 border border-slate-700">
+                    <div class="flex justify-between"><span class="text-slate-400">교번:</span> <span class="font-mono font-bold text-slate-100">${person.number}번</span></div>
+                    <div class="flex justify-between"><span class="text-slate-400">성명:</span> <span class="font-bold text-emerald-400">${person.name}</span></div>
+                    <div class="flex justify-between"><span class="text-slate-400">소속:</span> <span class="font-semibold">${unitName}</span></div>
+                    <div class="flex justify-between"><span class="text-slate-400">좌석 위치:</span> <span class="font-bold text-amber-400">${person.col}열 ${person.row}행</span></div>
+                </div>
+            `;
+            toggleModal('detail-modal');
+        }
+
+        window.onload = renderBoard;
     </script>
 </body>
 </html>
