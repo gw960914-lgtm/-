@@ -44,7 +44,6 @@
 
     <div class="w-full max-w-4xl bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-4 sm:p-6 flex flex-col gap-6">
         
-        <!-- 상단 헤더 -->
         <header class="text-center space-y-3 relative border-b border-slate-800 pb-5">
             <h1 class="text-2xl sm:text-3xl font-extrabold text-emerald-400 tracking-tight">
                 특부후 264기 임관식 배치도 조회
@@ -66,7 +65,6 @@
             </div>
         </header>
 
-        <!-- 검색 영역 (교번 + 성명) -->
         <section class="bg-slate-800/80 p-4 rounded-xl border border-slate-700/60 shadow-inner">
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
@@ -78,7 +76,6 @@
                     <input type="text" id="search-name" placeholder="예: 박철완" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-emerald-500">
                 </div>
             </div>
-
             <div class="mt-4 flex gap-2">
                 <button onclick="executeSearch()" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2.5 rounded-lg text-sm transition flex items-center justify-center gap-2 shadow-lg shadow-emerald-900/30">
                     조회하기
@@ -89,16 +86,12 @@
             </div>
         </section>
 
-        <!-- 검색 결과 알림 -->
         <div id="search-result-banner" class="hidden p-3 rounded-lg text-sm text-center font-semibold"></div>
 
-        <!-- 단상 영역 -->
         <section class="space-y-3 text-center">
             <div class="bg-slate-100 text-slate-900 font-extrabold text-base sm:text-lg py-2.5 rounded-xl shadow-md tracking-wider">
                 단 상 ( 사 열 대 )
             </div>
-
-            <!-- 단상 앞 지휘자 (76번 박철완 전용 카드) -->
             <div class="max-w-xs mx-auto text-xs">
                 <div id="commander-card" class="bg-slate-800 border border-emerald-500/50 p-2.5 rounded-lg shadow-md transition cursor-pointer" onclick="openCommanderModal()">
                     <span class="text-emerald-400 font-bold block mb-0.5">지휘자</span>
@@ -107,10 +100,9 @@
             </div>
         </section>
 
-        <!-- 배치도 영역 (8열 배치) -->
         <section class="border border-slate-800 bg-slate-950 p-3 sm:p-4 rounded-xl space-y-3">
             <div class="grid grid-cols-2 text-center text-xs sm:text-sm font-bold border-b border-slate-800 pb-2">
-                <div class="text-indigo-400 border-r border-slate-800 pr-2">
+                <div class="text-purple-400 border-r border-slate-800 pr-2">
                     제1제대 (1열 ~ 4열)
                 </div>
                 <div class="text-emerald-400 pl-2">
@@ -129,10 +121,9 @@
                 </div>
             </div>
         </section>
-
     </div>
 
-    <!-- 상세 정보 모달 -->
+    <!-- Modals (내용 생략 - 이전과 동일) -->
     <div id="detail-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
         <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-sm w-full p-5 space-y-4 shadow-2xl">
             <h3 class="text-lg font-bold text-emerald-400 border-b border-slate-800 pb-2 flex justify-between items-center">
@@ -140,39 +131,30 @@
                 <button onclick="toggleModal('detail-modal')" class="text-slate-400 hover:text-white text-xl">&times;</button>
             </h3>
             <div id="modal-content" class="space-y-2.5 text-sm text-slate-200"></div>
-            <button onclick="toggleModal('detail-modal')" class="w-full bg-slate-800 hover:bg-slate-700 text-white font-semibold py-2 rounded-lg text-sm transition">
-                닫기
-            </button>
+            <button onclick="toggleModal('detail-modal')" class="w-full bg-slate-800 hover:bg-slate-700 text-white font-semibold py-2 rounded-lg text-sm transition">닫기</button>
         </div>
     </div>
 
-    <!-- 안내문 모달 -->
     <div id="notice-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
         <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-md w-full p-5 space-y-4 shadow-2xl">
             <h3 class="text-lg font-bold text-amber-400 border-b border-slate-800 pb-2 flex justify-between items-center">
-                <span>임관식 배치도 이용 안내</span>
+                <span>이용 안내</span>
                 <button onclick="toggleModal('notice-modal')" class="text-slate-400 hover:text-white text-xl">&times;</button>
             </h3>
-            <div class="space-y-3 text-xs sm:text-sm text-slate-300 leading-relaxed">
-                <p>1. <strong>검색 방법</strong>: 후보생의 교번 또는 성명을 입력 후 [조회하기] 버튼을 누르면 위치가 주황색으로 강조됩니다.</p>
-                <p>2. <strong>지휘자 위치</strong>: 76번 박철완 후보생은 '지휘자' 위치에 편성되어 있습니다.</p>
-                <p>3. <strong>제대 구별</strong>: 사열대 기준 <strong>좌측 4개 열이 제1제대</strong>, <strong>우측 4개 열이 제2제대</strong>입니다.</p>
-                <p>4. <strong>시점 안내</strong>: 기본 설정은 관람석에서 단상을 바라보는 부모님 시점입니다.</p>
+            <div class="space-y-3 text-xs text-slate-300">
+                <p>1. 제1제대(1~4열)는 <strong>보라색</strong>, 제2제대(5~8열)는 <strong>녹색</strong>으로 표시됩니다.</p>
             </div>
-            <button onclick="toggleModal('notice-modal')" class="w-full bg-amber-600 hover:bg-amber-500 text-white font-semibold py-2 rounded-lg text-sm transition">
-                확인하였습니다
-            </button>
+            <button onclick="toggleModal('notice-modal')" class="w-full bg-amber-600 hover:bg-amber-500 text-white font-semibold py-2 rounded-lg text-sm transition">확인</button>
         </div>
     </div>
 
     <script>
         const TOTAL_COLS = 8;
         const TOTAL_ROWS = 21;
-
         const rawTraineesList = [
-            { number: "1", name: "강민우" }, { number: "3", name: "고경민" }, { number: "5", name: "곽민혁" }, { number: "7", name: "구민제" }, { number: "8", name: "구승범" }, { number: "9", name: "구휘성" }, { number: "10", name: "권광림" }, { number: "11", name: "권선우" }, { number: "12", name: "권성찬" }, { number: "13", name: "김강휘" }, { number: "14", name: "김건우" }, { number: "15", name: "김경모" }, { number: "18", name: "김대현" }, { number: "19", name: "김덕현" }, { number: "20", name: "김도현" }, { number: "21", name: "김동현" }, { number: "22", name: "김동형" }, { number: "26", name: "김민준A" }, { number: "28", name: "김병수" }, { number: "29", name: "김승하" }, { number: "33", name: "김어진" },
+             { number: "1", name: "강민우" }, { number: "3", name: "고경민" }, { number: "5", name: "곽민혁" }, { number: "7", name: "구민제" }, { number: "8", name: "구승범" }, { number: "9", name: "구휘성" }, { number: "10", name: "권광림" }, { number: "11", name: "권선우" }, { number: "12", name: "권성찬" }, { number: "13", name: "김강휘" }, { number: "14", name: "김건우" }, { number: "15", name: "김경모" }, { number: "18", name: "김대현" }, { number: "19", name: "김덕현" }, { number: "20", name: "김도현" }, { number: "21", name: "김동현" }, { number: "22", name: "김동형" }, { number: "26", name: "김민준A" }, { number: "28", name: "김병수" }, { number: "29", name: "김승하" }, { number: "33", name: "김어진" },
             { number: "34", name: "김영광" }, { number: "36", name: "김원철" }, { number: "38", name: "김윤찬" }, { number: "39", name: "김인수" }, { number: "40", name: "김종빈" }, { number: "41", name: "김준권" }, { number: "43", name: "김준혁B" }, { number: "44", name: "김진우" }, { number: "46", name: "김태규" }, { number: "47", name: "김태연" }, { number: "48", name: "김하진" }, { number: "49", name: "김현민" }, { number: "51", name: "김현우" }, { number: "53", name: "김현준A" }, { number: "54", name: "김현준B" }, { number: "55", name: "김현중" }, { number: "56", name: "나겸우" }, { number: "57", name: "나시후" }, { number: "58", name: "류호식" }, { number: "59", name: "박건욱" }, { number: "60", name: "박심윤" },
-            { number: "61", name: "박상권" }, { number: "63", name: "박승태" }, { number: "64", name: "박시환" }, { number: "65", name: "박예찬" }, { number: "66", name: "박정수" }, { number: "67", name: "박제연" }, { number: "68", name: "박주성" }, { number: "69", name: "박주형" }, { number: "70", name: "박준성" }, { number: "71", name: "박중정" }, { number: "73", name: "박진응" }, { number: "75", name: "박찬민" }, { number: "76", name: "박철완" }, { number: "77", name: "박태수" }, { number: "78", name: "박현준" }, { number: "80", name: "백승곤" }, { number: "81", name: "백승규" }, { number: "83", name: "서재경" }, { number: "84", name: "서창빈" }, { number: "85", name: "성유찬" }, { number: "86", name: "소현섭" },
+            { number: "61", name: "박상권" }, { number: "63", name: "박승태" }, { number: "64", name: "박시환" }, { number: "65", name: "박예찬" }, { number: "66", name: "박정수" }, { number: "67", name: "박제연" }, { number: "68", name: "박주성" }, { number: "69", name: "박주형" }, { number: "70", name: "박준성" }, { number: "71", name: "박중정" }, { number: "73", name: "박진응" }, { number: "75", name: "박찬민" }, /* 박철완 건너뜀 */ { number: "77", name: "박태수" }, { number: "78", name: "박현준" }, { number: "80", name: "백승곤" }, { number: "81", name: "백승규" }, { number: "83", name: "서재경" }, { number: "84", name: "서창빈" }, { number: "85", name: "성유찬" }, { number: "86", name: "소현섭" },
             { number: "87", name: "손호민" }, { number: "88", name: "송수힌" }, { number: "89", name: "신연성" }, { number: "90", name: "신혁수" }, { number: "92", name: "안세민" }, { number: "93", name: "안창하" }, { number: "94", name: "양인권" }, { number: "97", name: "오세힌" }, { number: "98", name: "오태환" }, { number: "99", name: "오형석" }, { number: "100", name: "우림" }, { number: "101", name: "우성환" }, { number: "102", name: "유범진" }, { number: "104", name: "윤시진" }, { number: "105", name: "윤여찬" }, { number: "106", name: "윤정현" }, { number: "107", name: "윤지원" }, { number: "108", name: "윤현빈" }, { number: "109", name: "이강교" }, { number: "110", name: "이노영" }, { number: "111", name: "이도윤" },
             { number: "112", name: "이범수" }, { number: "113", name: "이성민" }, { number: "114", name: "이승민" }, { number: "115", name: "이승재" }, { number: "116", name: "이승찬" }, { number: "117", name: "이승현" }, { number: "118", name: "이연우" }, { number: "119", name: "이유승" }, { number: "120", name: "이윤호" }, { number: "121", name: "이재훈" }, { number: "122", name: "이정민" }, { number: "123", name: "이정수" }, { number: "124", name: "이종환" }, { number: "125", name: "이준성" }, { number: "127", name: "이지원" }, { number: "129", name: "이태윤" }, { number: "133", name: "장한빈" }, { number: "134", name: "점종훈" }, { number: "135", name: "정규현" }, { number: "137", name: "정무경" }, { number: "138", name: "정서헌" },
             { number: "139", name: "정성우" }, { number: "140", name: "정준호" }, { number: "141", name: "정지오" }, { number: "142", name: "정창민" }, { number: "143", name: "정형관" }, { number: "144", name: "조도연" }, { number: "145", name: "조범주" }, { number: "146", name: "조우빈" }, { number: "147", name: "조형태" }, { number: "148", name: "주관영" }, { number: "149", name: "천원희" }, { number: "151", name: "최승훈" }, { number: "152", name: "최용준" }, { number: "153", name: "최우빈" }, { number: "154", name: "최윤우" }, { number: "157", name: "최정현" }, { number: "159", name: "최지호" }, { number: "161", name: "최호준" }, { number: "162", name: "하은율" }, { number: "163", name: "한대희" }, { number: "164", name: "한신혁" },
@@ -196,20 +178,17 @@
             dummy.select();
             document.execCommand('copy');
             document.body.removeChild(dummy);
-            
             const banner = document.getElementById('search-result-banner');
             banner.className = "p-3 rounded-lg text-sm text-center font-semibold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30";
-            banner.innerText = "웹사이트 주소가 복사되었습니다. 카카오톡 채팅방에 붙여넣기(Ctrl+V) 하세요.";
+            banner.innerText = "웹사이트 주소가 복사되었습니다.";
             banner.classList.remove('hidden');
         }
 
         function renderBoard() {
             const seatGrid = document.getElementById('seat-grid');
             const colHeaders = document.getElementById('column-headers');
-
             seatGrid.innerHTML = '';
             colHeaders.innerHTML = '';
-
             for (let c = 1; c <= TOTAL_COLS; c++) {
                 const actualCol = isParentView ? c : (TOTAL_COLS - c + 1);
                 const colDiv = document.createElement('div');
@@ -217,24 +196,24 @@
                 colDiv.innerText = `${actualCol}열`;
                 colHeaders.appendChild(colDiv);
             }
-
             for (let r = 1; r <= TOTAL_ROWS; r++) {
                 for (let c = 1; c <= TOTAL_COLS; c++) {
                     const colIndex = isParentView ? c : (TOTAL_COLS - c + 1);
                     const seatCode = `${colIndex}-${r}`;
                     const person = traineesData.find(t => t.col === colIndex && t.row === r);
-
                     const seatBtn = document.createElement('button');
                     seatBtn.id = `seat-${seatCode}`;
                     
+                    // 제대별 색상 구분 (1제대 보라, 2제대 녹색)
+                    const echelonBg = (colIndex <= 4) ? 'bg-purple-950/60' : 'bg-emerald-950/60';
                     const isBorderRight = (c === 4);
                     const borderClass = isBorderRight ? 'mr-1 border-r-2 border-r-indigo-500' : '';
-
+                    
                     if (person) {
-                        seatBtn.className = `p-2 rounded-md border text-center transition flex flex-col items-center justify-center min-h-[46px] bg-slate-800/70 border-slate-700/80 hover:border-emerald-500 hover:bg-slate-800 ${borderClass}`;
+                        seatBtn.className = `p-2 rounded-md border text-center transition flex flex-col items-center justify-center min-h-[46px] ${echelonBg} border-slate-700/80 hover:border-emerald-500 hover:bg-slate-800 ${borderClass}`;
                         seatBtn.onclick = () => openDetailModal(person);
                         seatBtn.innerHTML = `
-                            <span class="text-[10px] text-slate-400 font-mono">${person.number}번 (${person.col}-${person.row})</span>
+                            <span class="text-[10px] text-slate-400 font-mono">${person.number}번</span>
                             <span class="text-xs font-bold text-slate-100">${person.name}</span>
                         `;
                     } else {
@@ -242,7 +221,6 @@
                         seatBtn.innerHTML = `<span class="text-[10px] text-slate-600">${seatCode}</span>`;
                         seatBtn.disabled = true;
                     }
-
                     seatGrid.appendChild(seatBtn);
                 }
             }
@@ -253,19 +231,9 @@
             const nameVal = document.getElementById('search-name').value.trim();
             const banner = document.getElementById('search-result-banner');
             const commanderCard = document.getElementById('commander-card');
-
             document.querySelectorAll('.highlight-seat').forEach(el => el.classList.remove('highlight-seat'));
-
-            if (!numberVal && !nameVal) {
-                banner.className = "p-3 rounded-lg text-sm text-center font-semibold bg-amber-500/20 text-amber-300 border border-amber-500/30";
-                banner.innerText = "교번 또는 성명을 입력해 주세요.";
-                banner.classList.remove('hidden');
-                return;
-            }
-
-            const isMatchCommander = (numberVal === "76" || nameVal.includes("박철완"));
-
-            if (isMatchCommander) {
+            if (!numberVal && !nameVal) return;
+            if (numberVal === "76" || nameVal.includes("박철완")) {
                 commanderCard.classList.add('highlight-seat');
                 commanderCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
                 banner.className = "p-3 rounded-lg text-sm text-center font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30";
@@ -273,28 +241,16 @@
                 banner.classList.remove('hidden');
                 return;
             }
-
-            const match = traineesData.find(t => {
-                const matchNumber = !numberVal || t.number === numberVal;
-                const matchName = !nameVal || t.name.includes(nameVal);
-                return matchNumber && matchName;
-            });
-
+            const match = traineesData.find(t => (!numberVal || t.number === numberVal) && (!nameVal || t.name.includes(nameVal)));
             if (match) {
-                const seatCode = `${match.col}-${match.row}`;
-                const targetSeat = document.getElementById(`seat-${seatCode}`);
+                const targetSeat = document.getElementById(`seat-${(isParentView ? match.col : (TOTAL_COLS - match.col + 1))}-${match.row}`);
                 if (targetSeat) {
                     targetSeat.classList.add('highlight-seat');
                     targetSeat.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
-                    const unitName = match.col <= 4 ? "제1제대" : "제2제대";
                     banner.className = "p-3 rounded-lg text-sm text-center font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30";
-                    banner.innerHTML = `[${match.number}번 ${match.name}] 후보생 위치: <strong>${unitName} ${match.col}열 ${match.row}행</strong>`;
+                    banner.innerHTML = `[${match.number}번 ${match.name}] 위치: <strong>${match.col <= 4 ? "제1제대" : "제2제대"} ${match.col}열 ${match.row}행</strong>`;
                     banner.classList.remove('hidden');
                 }
-            } else {
-                banner.className = "p-3 rounded-lg text-sm text-center font-semibold bg-rose-500/20 text-rose-300 border border-rose-500/30";
-                banner.innerText = "일치하는 후보생 정보를 찾을 수 없습니다. 교번이나 성명을 다시 확인하세요.";
-                banner.classList.remove('hidden');
             }
         }
 
@@ -307,40 +263,29 @@
 
         function toggleViewDirection() {
             isParentView = !isParentView;
-            const btn = document.getElementById('view-toggle-btn');
-            btn.innerText = isParentView ? "시점: 관람석(부모님) 기준" : "시점: 사열대(단상) 기준";
             renderBoard();
         }
 
-        function toggleModal(modalId) {
-            const modal = document.getElementById(modalId);
-            modal.classList.toggle('hidden');
-        }
+        function toggleModal(id) { document.getElementById(id).classList.toggle('hidden'); }
 
         function openCommanderModal() {
             const content = document.getElementById('modal-content');
-            content.innerHTML = `
-                <div class="bg-slate-800 p-3 rounded-lg space-y-1.5 border border-slate-700">
-                    <div class="flex justify-between"><span class="text-slate-400">교번:</span> <span class="font-mono font-bold text-slate-100">76번</span></div>
-                    <div class="flex justify-between"><span class="text-slate-400">성명:</span> <span class="font-bold text-emerald-400">박철완</span></div>
-                    <div class="flex justify-between"><span class="text-slate-400">직책:</span> <span class="font-bold text-amber-400">지휘자</span></div>
-                    <div class="flex justify-between"><span class="text-slate-400">위치:</span> <span class="font-semibold text-slate-200">단상 바로 앞 독립 위치</span></div>
-                </div>
-            `;
+            content.innerHTML = `<div class="bg-slate-800 p-3 rounded-lg space-y-1.5 border border-slate-700">
+                <div class="flex justify-between"><span class="text-slate-400">교번:</span> <span class="font-bold text-slate-100">76번</span></div>
+                <div class="flex justify-between"><span class="text-slate-400">성명:</span> <span class="font-bold text-emerald-400">박철완</span></div>
+                <div class="flex justify-between"><span class="text-slate-400">직책:</span> <span class="font-bold text-amber-400">지휘자</span></div>
+            </div>`;
             toggleModal('detail-modal');
         }
 
-        function openDetailModal(person) {
-            const unitName = person.col <= 4 ? "제1제대" : "제2제대";
+        function openDetailModal(p) {
             const content = document.getElementById('modal-content');
-            content.innerHTML = `
-                <div class="bg-slate-800 p-3 rounded-lg space-y-1.5 border border-slate-700">
-                    <div class="flex justify-between"><span class="text-slate-400">교번:</span> <span class="font-mono font-bold text-slate-100">${person.number}번</span></div>
-                    <div class="flex justify-between"><span class="text-slate-400">성명:</span> <span class="font-bold text-emerald-400">${person.name}</span></div>
-                    <div class="flex justify-between"><span class="text-slate-400">소속:</span> <span class="font-semibold">${unitName}</span></div>
-                    <div class="flex justify-between"><span class="text-slate-400">좌석 위치:</span> <span class="font-bold text-amber-400">${person.col}열 ${person.row}행</span></div>
-                </div>
-            `;
+            content.innerHTML = `<div class="bg-slate-800 p-3 rounded-lg space-y-1.5 border border-slate-700">
+                <div class="flex justify-between"><span class="text-slate-400">교번:</span> <span class="font-bold text-slate-100">${p.number}번</span></div>
+                <div class="flex justify-between"><span class="text-slate-400">성명:</span> <span class="font-bold text-emerald-400">${p.name}</span></div>
+                <div class="flex justify-between"><span class="text-slate-400">소속:</span> <span class="font-semibold">${p.col <= 4 ? "제1제대" : "제2제대"}</span></div>
+                <div class="flex justify-between"><span class="text-slate-400">좌석:</span> <span class="font-bold text-amber-400">${p.col}열 ${p.row}행</span></div>
+            </div>`;
             toggleModal('detail-modal');
         }
 
