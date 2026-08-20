@@ -5,14 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>특부후 264기 임관식 배치도 조회</title>
 
-    <!-- Open Graph (카카오톡 미리보기 카드) -->
     <meta property="og:type" content="website">
     <meta property="og:title" content="특부후 264기 임관식 좌석 배치도">
     <meta property="og:description" content="후보생의 교번 또는 성명을 입력하여 좌석 위치를 확인하세요.">
     <meta property="og:image" content="https://images.unsplash.com/photo-1541872703-74c5e44368f9?w=800">
     <meta property="og:locale" content="ko_KR">
 
-    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
 
     <style>
@@ -76,6 +74,7 @@
                     <input type="text" id="search-name" placeholder="예: 박철완" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-emerald-500">
                 </div>
             </div>
+
             <div class="mt-4 flex gap-2">
                 <button onclick="executeSearch()" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2.5 rounded-lg text-sm transition flex items-center justify-center gap-2 shadow-lg shadow-emerald-900/30">
                     조회하기
@@ -92,6 +91,7 @@
             <div class="bg-slate-100 text-slate-900 font-extrabold text-base sm:text-lg py-2.5 rounded-xl shadow-md tracking-wider">
                 단 상 ( 사 열 대 )
             </div>
+
             <div class="max-w-xs mx-auto text-xs">
                 <div id="commander-card" class="bg-slate-800 border border-emerald-500/50 p-2.5 rounded-lg shadow-md transition cursor-pointer" onclick="openCommanderModal()">
                     <span class="text-emerald-400 font-bold block mb-0.5">지휘자</span>
@@ -121,9 +121,9 @@
                 </div>
             </div>
         </section>
+
     </div>
 
-    <!-- Modals (내용 생략 - 이전과 동일) -->
     <div id="detail-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
         <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-sm w-full p-5 space-y-4 shadow-2xl">
             <h3 class="text-lg font-bold text-emerald-400 border-b border-slate-800 pb-2 flex justify-between items-center">
@@ -141,8 +141,10 @@
                 <span>이용 안내</span>
                 <button onclick="toggleModal('notice-modal')" class="text-slate-400 hover:text-white text-xl">&times;</button>
             </h3>
-            <div class="space-y-3 text-xs text-slate-300">
-                <p>1. 제1제대(1~4열)는 <strong>보라색</strong>, 제2제대(5~8열)는 <strong>녹색</strong>으로 표시됩니다.</p>
+            <div class="space-y-3 text-xs sm:text-sm text-slate-300">
+                <p>1. 교번 또는 성명을 입력하시고 [조회하기] 버튼을 누르시면 되겠습니다.</p>
+                <p>2. 다른 인원을 검색하고 싶으실 땐 꼭 [초기화] 버튼을 눌러주시기 바랍니다.</p>
+                <p>3. 제1제대(1~4열)는 <strong>보라색</strong>, 제2제대(5~8열)는 <strong>녹색</strong>으로 표시됩니다.</p>
             </div>
             <button onclick="toggleModal('notice-modal')" class="w-full bg-amber-600 hover:bg-amber-500 text-white font-semibold py-2 rounded-lg text-sm transition">확인</button>
         </div>
@@ -151,15 +153,187 @@
     <script>
         const TOTAL_COLS = 8;
         const TOTAL_ROWS = 21;
+
         const rawTraineesList = [
-             { number: "1", name: "강민우" }, { number: "3", name: "고경민" }, { number: "5", name: "곽민혁" }, { number: "7", name: "구민제" }, { number: "8", name: "구승범" }, { number: "9", name: "구휘성" }, { number: "10", name: "권광림" }, { number: "11", name: "권선우" }, { number: "12", name: "권성찬" }, { number: "13", name: "김강휘" }, { number: "14", name: "김건우" }, { number: "15", name: "김경모" }, { number: "18", name: "김대현" }, { number: "19", name: "김덕현" }, { number: "20", name: "김도현" }, { number: "21", name: "김동현" }, { number: "22", name: "김동형" }, { number: "26", name: "김민준A" }, { number: "28", name: "김병수" }, { number: "29", name: "김승하" }, { number: "33", name: "김어진" },
-            { number: "34", name: "김영광" }, { number: "36", name: "김원철" }, { number: "38", name: "김윤찬" }, { number: "39", name: "김인수" }, { number: "40", name: "김종빈" }, { number: "41", name: "김준권" }, { number: "43", name: "김준혁B" }, { number: "44", name: "김진우" }, { number: "46", name: "김태규" }, { number: "47", name: "김태연" }, { number: "48", name: "김하진" }, { number: "49", name: "김현민" }, { number: "51", name: "김현우" }, { number: "53", name: "김현준A" }, { number: "54", name: "김현준B" }, { number: "55", name: "김현중" }, { number: "56", name: "나겸우" }, { number: "57", name: "나시후" }, { number: "58", name: "류호식" }, { number: "59", name: "박건욱" }, { number: "60", name: "박심윤" },
-            { number: "61", name: "박상권" }, { number: "63", name: "박승태" }, { number: "64", name: "박시환" }, { number: "65", name: "박예찬" }, { number: "66", name: "박정수" }, { number: "67", name: "박제연" }, { number: "68", name: "박주성" }, { number: "69", name: "박주형" }, { number: "70", name: "박준성" }, { number: "71", name: "박중정" }, { number: "73", name: "박진응" }, { number: "75", name: "박찬민" }, /* 박철완 건너뜀 */ { number: "77", name: "박태수" }, { number: "78", name: "박현준" }, { number: "80", name: "백승곤" }, { number: "81", name: "백승규" }, { number: "83", name: "서재경" }, { number: "84", name: "서창빈" }, { number: "85", name: "성유찬" }, { number: "86", name: "소현섭" },
-            { number: "87", name: "손호민" }, { number: "88", name: "송수힌" }, { number: "89", name: "신연성" }, { number: "90", name: "신혁수" }, { number: "92", name: "안세민" }, { number: "93", name: "안창하" }, { number: "94", name: "양인권" }, { number: "97", name: "오세힌" }, { number: "98", name: "오태환" }, { number: "99", name: "오형석" }, { number: "100", name: "우림" }, { number: "101", name: "우성환" }, { number: "102", name: "유범진" }, { number: "104", name: "윤시진" }, { number: "105", name: "윤여찬" }, { number: "106", name: "윤정현" }, { number: "107", name: "윤지원" }, { number: "108", name: "윤현빈" }, { number: "109", name: "이강교" }, { number: "110", name: "이노영" }, { number: "111", name: "이도윤" },
-            { number: "112", name: "이범수" }, { number: "113", name: "이성민" }, { number: "114", name: "이승민" }, { number: "115", name: "이승재" }, { number: "116", name: "이승찬" }, { number: "117", name: "이승현" }, { number: "118", name: "이연우" }, { number: "119", name: "이유승" }, { number: "120", name: "이윤호" }, { number: "121", name: "이재훈" }, { number: "122", name: "이정민" }, { number: "123", name: "이정수" }, { number: "124", name: "이종환" }, { number: "125", name: "이준성" }, { number: "127", name: "이지원" }, { number: "129", name: "이태윤" }, { number: "133", name: "장한빈" }, { number: "134", name: "점종훈" }, { number: "135", name: "정규현" }, { number: "137", name: "정무경" }, { number: "138", name: "정서헌" },
-            { number: "139", name: "정성우" }, { number: "140", name: "정준호" }, { number: "141", name: "정지오" }, { number: "142", name: "정창민" }, { number: "143", name: "정형관" }, { number: "144", name: "조도연" }, { number: "145", name: "조범주" }, { number: "146", name: "조우빈" }, { number: "147", name: "조형태" }, { number: "148", name: "주관영" }, { number: "149", name: "천원희" }, { number: "151", name: "최승훈" }, { number: "152", name: "최용준" }, { number: "153", name: "최우빈" }, { number: "154", name: "최윤우" }, { number: "157", name: "최정현" }, { number: "159", name: "최지호" }, { number: "161", name: "최호준" }, { number: "162", name: "하은율" }, { number: "163", name: "한대희" }, { number: "164", name: "한신혁" },
-            { number: "165", name: "한영민" }, { number: "167", name: "한태영" }, { number: "170", name: "홍지현" }, { number: "171", name: "홍현호" }, { number: "172", name: "황태빈" }, { number: "174", name: "강지우" }, { number: "175", name: "강민아" }, { number: "176", name: "고준우" }, { number: "178", name: "김솔민" }, { number: "181", name: "김지민" }, { number: "183", name: "박인혁" }, { number: "184", name: "송연우" }, { number: "185", name: "신승기" }, { number: "186", name: "오서준" }, { number: "187", name: "이도현" }, { number: "188", name: "이민성" }, { number: "189", name: "임종화" }, { number: "190", name: "장민성" }, { number: "191", name: "전창현" }, { number: "192", name: "정정훈" }, { number: "194", name: "최우진" },
-            { number: "195", name: "최준혁" }, { number: "196", name: "홍준혁" }, { number: "197", name: "김건하" }, { number: "198", name: "김남운" }, { number: "200", name: "김상현" }, { number: "202", name: "남두환" }, { number: "205", name: "박지원" }, { number: "206", name: "변승우" }, { number: "208", name: "오준영" }, { number: "211", name: "이강" }, { number: "212", name: "이정규" }, { number: "214", name: "이진우" }, { number: "216", name: "이한빈" }, { number: "218", name: "임철희" }, { number: "219", name: "정다훈" }, { number: "221", name: "지승효" }, { number: "224", name: "최효명" }
+            // 1열 (21명)
+            { number: "1", name: "강민우" },
+            { number: "3", name: "고경민" },
+            { number: "5", name: "곽민혁" },
+            { number: "7", name: "구민제" },
+            { number: "8", name: "구승범" },
+            { number: "9", name: "구휘성" },
+            { number: "10", name: "권광림" },
+            { number: "11", name: "권선우" },
+            { number: "12", name: "권성찬" },
+            { number: "13", name: "김강휘" },
+            { number: "14", name: "김건우" },
+            { number: "15", name: "김경모" },
+            { number: "18", name: "김대현" },
+            { number: "19", name: "김덕현" },
+            { number: "20", name: "김도현" },
+            { number: "21", name: "김동현" },
+            { number: "22", name: "김동형" },
+            { number: "26", name: "김민준" },
+            { number: "28", name: "김병수" },
+            { number: "29", name: "김승하" },
+            { number: "33", name: "김어진" },
+
+            // 2열 (21명)
+            { number: "34", name: "김영광" },
+            { number: "36", name: "김원철" },
+            { number: "38", name: "김윤찬" },
+            { number: "39", name: "김인수" },
+            { number: "40", name: "김종빈" },
+            { number: "41", name: "김준권" },
+            { number: "43", name: "김준혁" },
+            { number: "44", name: "김진우" },
+            { number: "46", name: "김태규" },
+            { number: "47", name: "김태연" },
+            { number: "48", name: "김하진" },
+            { number: "49", name: "김현민" },
+            { number: "51", name: "김현우" },
+            { number: "53", name: "김현준" },
+            { number: "54", name: "김현준" },
+            { number: "55", name: "김현중" },
+            { number: "56", name: "나겸우" },
+            { number: "57", name: "나시후" },
+            { number: "58", name: "류호식" },
+            { number: "59", name: "박건욱" },
+            { number: "60", name: "박심윤" },
+
+            // 3열 (21명)
+            { number: "61", name: "박상권" },
+            { number: "63", name: "박승태" },
+            { number: "64", name: "박시환" },
+            { number: "65", name: "박예찬" },
+            { number: "66", name: "박정수" },
+            { number: "67", name: "박제연" },
+            { number: "68", name: "박주성" },
+            { number: "69", name: "박주형" },
+            { number: "70", name: "박준성" },
+            { number: "71", name: "박중정" },
+            { number: "73", name: "박진응" },
+            { number: "75", name: "박찬민" },
+            { number: "76", name: "박철완" }, // 지휘자 편성
+            { number: "77", name: "박태수" },
+            { number: "78", name: "박현준" },
+            { number: "80", name: "백승곤" },
+            { number: "81", name: "백승규" },
+            { number: "83", name: "서재경" },
+            { number: "84", name: "서창빈" },
+            { number: "85", name: "성유찬" },
+            { number: "86", name: "소현섭" },
+
+            // 4열 (21명)
+            { number: "87", name: "손호민" },
+            { number: "88", name: "송수힌" },
+            { number: "89", name: "신연성" },
+            { number: "90", name: "신혁수" },
+            { number: "92", name: "안세민" },
+            { number: "93", name: "안창하" },
+            { number: "94", name: "양인권" },
+            { number: "97", name: "오세힌" },
+            { number: "98", name: "오태환" },
+            { number: "99", name: "오형석" },
+            { number: "100", name: "우림" },
+            { number: "101", name: "우성환" },
+            { number: "102", name: "유범진" },
+            { number: "104", name: "윤시진" },
+            { number: "105", name: "윤여찬" },
+            { number: "106", name: "윤정현" },
+            { number: "107", name: "윤지원" },
+            { number: "108", name: "윤현빈" },
+            { number: "109", name: "이강교" },
+            { number: "110", name: "이노영" },
+            { number: "111", name: "이도윤" },
+
+            // 5열 (21명)
+            { number: "112", name: "이범수" },
+            { number: "113", name: "이성민" },
+            { number: "114", name: "이승민" },
+            { number: "115", name: "이승재" },
+            { number: "116", name: "이승찬" },
+            { number: "117", name: "이승현" },
+            { number: "118", name: "이연우" },
+            { number: "119", name: "이유승" },
+            { number: "120", name: "이윤호" },
+            { number: "121", name: "이재훈" },
+            { number: "122", name: "이정민" },
+            { number: "123", name: "이정수" },
+            { number: "124", name: "이종환" },
+            { number: "125", name: "이준성" },
+            { number: "127", name: "이지원" },
+            { number: "129", name: "이태윤" },
+            { number: "133", name: "장한빈" },
+            { number: "134", name: "점종훈" },
+            { number: "135", name: "정규현" },
+            { number: "137", name: "정무경" },
+            { number: "138", name: "정서헌" },
+
+            // 6열 (21명)
+            { number: "139", name: "정성우" },
+            { number: "140", name: "정준호" },
+            { number: "141", name: "정지오" },
+            { number: "142", name: "정창민" },
+            { number: "143", name: "정형관" },
+            { number: "144", name: "조도연" },
+            { number: "145", name: "조범주" },
+            { number: "146", name: "조우빈" },
+            { number: "147", name: "조형태" },
+            { number: "148", name: "주관영" },
+            { number: "149", name: "천원희" },
+            { number: "151", name: "최승훈" },
+            { number: "152", name: "최용준" },
+            { number: "153", name: "최우빈" },
+            { number: "154", name: "최윤우" },
+            { number: "157", name: "최정현" },
+            { number: "159", name: "최지호" },
+            { number: "161", name: "최호준" },
+            { number: "162", name: "하은율" },
+            { number: "163", name: "한대희" },
+            { number: "164", name: "한신혁" },
+
+            // 7열 (21명)
+            { number: "165", name: "한영민" },
+            { number: "167", name: "한태영" },
+            { number: "170", name: "홍지현" },
+            { number: "171", name: "홍현호" },
+            { number: "172", name: "황태빈" },
+            { number: "174", name: "강지우" },
+            { number: "175", name: "강민아" },
+            { number: "176", name: "고준우" },
+            { number: "178", name: "김솔민" },
+            { number: "181", name: "김지민" },
+            { number: "183", name: "박인혁" },
+            { number: "184", name: "송연우" },
+            { number: "185", name: "신승기" },
+            { number: "186", name: "오서준" },
+            { number: "187", name: "이도현" },
+            { number: "188", name: "이민성" },
+            { number: "189", name: "임종화" },
+            { number: "190", name: "장민성" },
+            { number: "191", name: "전창현" },
+            { number: "192", name: "정정훈" },
+            { number: "194", name: "최우진" },
+
+            // 8열 (17명)
+            { number: "195", name: "최준혁" },
+            { number: "196", name: "홍준혁" },
+            { number: "197", name: "김건하" },
+            { number: "198", name: "김남운" },
+            { number: "200", name: "김상현" },
+            { number: "202", name: "남두환" },
+            { number: "205", name: "박지원" },
+            { number: "206", name: "변승우" },
+            { number: "208", name: "오준영" },
+            { number: "211", name: "이강" },
+            { number: "212", name: "이정규" },
+            { number: "214", name: "이진우" },
+            { number: "216", name: "이한빈" },
+            { number: "218", name: "임철희" },
+            { number: "219", name: "정다훈" },
+            { number: "221", name: "지승효" },
+            { number: "224", name: "최효명" }
         ];
 
         const gridTrainees = rawTraineesList.filter(t => t.number !== "76");
@@ -178,6 +352,7 @@
             dummy.select();
             document.execCommand('copy');
             document.body.removeChild(dummy);
+            
             const banner = document.getElementById('search-result-banner');
             banner.className = "p-3 rounded-lg text-sm text-center font-semibold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30";
             banner.innerText = "웹사이트 주소가 복사되었습니다.";
@@ -204,7 +379,6 @@
                     const seatBtn = document.createElement('button');
                     seatBtn.id = `seat-${seatCode}`;
                     
-                    // 제대별 색상 구분 (1제대 보라, 2제대 녹색)
                     const echelonBg = (colIndex <= 4) ? 'bg-purple-950/60' : 'bg-emerald-950/60';
                     const isBorderRight = (c === 4);
                     const borderClass = isBorderRight ? 'mr-1 border-r-2 border-r-indigo-500' : '';
@@ -233,6 +407,7 @@
             const commanderCard = document.getElementById('commander-card');
             document.querySelectorAll('.highlight-seat').forEach(el => el.classList.remove('highlight-seat'));
             if (!numberVal && !nameVal) return;
+            
             if (numberVal === "76" || nameVal.includes("박철완")) {
                 commanderCard.classList.add('highlight-seat');
                 commanderCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -241,7 +416,8 @@
                 banner.classList.remove('hidden');
                 return;
             }
-            const match = traineesData.find(t => (!numberVal || t.number === numberVal) && (!nameVal || t.name.includes(nameVal)));
+            
+            const match = traineesData.find(t => (!numberVal || t.number === numberVal) && (!nameVal || t.name === nameVal || t.name.includes(nameVal)));
             if (match) {
                 const targetSeat = document.getElementById(`seat-${(isParentView ? match.col : (TOTAL_COLS - match.col + 1))}-${match.row}`);
                 if (targetSeat) {
@@ -251,6 +427,10 @@
                     banner.innerHTML = `[${match.number}번 ${match.name}] 위치: <strong>${match.col <= 4 ? "제1제대" : "제2제대"} ${match.col}열 ${match.row}행</strong>`;
                     banner.classList.remove('hidden');
                 }
+            } else {
+                banner.className = "p-3 rounded-lg text-sm text-center font-semibold bg-rose-500/20 text-rose-300 border border-rose-500/30";
+                banner.innerText = "일치하는 후보생 정보를 찾을 수 없습니다. 교번이나 성명을 다시 확인하세요.";
+                banner.classList.remove('hidden');
             }
         }
 
@@ -293,3 +473,5 @@
     </script>
 </body>
 </html>
+
+
