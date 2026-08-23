@@ -1,3 +1,4 @@
+```html
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -110,7 +111,7 @@
         <!-- 수평 통합 좌석 배치도 -->
         <section class="border border-slate-800 bg-slate-950 p-3 sm:p-4 rounded-xl space-y-3">
             <div class="flex justify-between items-center text-[11px] text-slate-400">
-                <span id="drag-status-msg" class="text-sky-400 font-medium hidden">관리자 권한 활성화: 카드를 끌어놓거나 선택하여 자리를 교환하세요.</span>
+                <span id="drag-status-msg" class="text-sky-400 font-medium hidden">관리자 권한 활성화: 자리를 선택하거나 끌어놓아 교환하세요.</span>
                 <span class="text-slate-400">좌우로 스크롤하여 전체 대열을 확인하세요.</span>
                 <span class="ml-auto" id="total-trainees-count">총 163명 (지휘자 1명 + 대열 162명)</span>
             </div>
@@ -164,13 +165,13 @@
         <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-2xl w-full p-5 shadow-2xl overflow-hidden" id="modal-content"></div>
     </div>
 
-    <!-- 비밀번호 입력 모달 -->
-    <div id="password-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden z-[60] flex items-center justify-center p-4">
+    <!-- 비밀번호 입력 커스텀 모달 -->
+    <div id="password-modal" class="fixed inset-0 bg-black/75 backdrop-blur-sm hidden z-[70] flex items-center justify-center p-4">
         <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-xs w-full p-5 space-y-4 shadow-2xl text-center">
-            <h3 class="text-sm font-bold text-amber-400" id="pwd-modal-title">관리자 비밀번호 입력</h3>
-            <input type="password" id="pwd-modal-input" placeholder="비밀번호" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white text-center focus:outline-none focus:border-emerald-500 font-mono">
+            <h3 class="text-sm font-bold text-amber-400" id="pwd-modal-title">비밀번호 입력</h3>
+            <input type="password" id="pwd-modal-input" placeholder="비밀번호 입력" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white text-center focus:outline-none focus:border-emerald-500 font-mono">
             <div class="flex gap-2">
-                <button id="pwd-modal-confirm" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2 rounded-lg text-xs transition">확인</button>
+                <button onclick="confirmPasswordModal()" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2 rounded-lg text-xs transition">확인</button>
                 <button onclick="closePasswordModal()" class="flex-1 bg-slate-700 hover:bg-slate-600 text-slate-300 font-medium py-2 rounded-lg text-xs transition">취소</button>
             </div>
         </div>
@@ -196,7 +197,7 @@
     </div>
     
     <script>
-        // 66번 제외 및 ech(제대 1/2), col(열 1~8), row(행 1~21) 구조로 명확히 정돈된 기본 데이터 (총 162명)
+        // 66번 제외 및 ech(1/2제대), col(1~8열), row(1~21행) 명확 구조의 기본 데이터 (총 162명)
         const defaultData = [
             // 제1제대 (81명: 1~10행 각 8명, 11행 1명)
             { ech: 1, col: 1, row: 1, number: "1", name: "강민우", note: "" }, { ech: 1, col: 2, row: 1, number: "3", name: "고경민", note: "" }, { ech: 1, col: 3, row: 1, number: "5", name: "곽민혁", note: "" }, { ech: 1, col: 4, row: 1, number: "7", name: "구민제", note: "" }, { ech: 1, col: 5, row: 1, number: "8", name: "구승범", note: "" }, { ech: 1, col: 6, row: 1, number: "9", name: "구휘성", note: "" }, { ech: 1, col: 7, row: 1, number: "10", name: "권광림", note: "" }, { ech: 1, col: 8, row: 1, number: "11", name: "권선우", note: "" },
@@ -221,16 +222,14 @@
             { ech: 2, col: 1, row: 7, number: "174", name: "강지우", note: "" }, { ech: 2, col: 2, row: 7, number: "175", name: "강민아", note: "" }, { ech: 2, col: 3, row: 7, number: "176", name: "고준우", note: "" }, { ech: 2, col: 4, row: 7, number: "178", name: "김솔민", note: "" }, { ech: 2, col: 5, row: 7, number: "181", name: "김지민", note: "" }, { ech: 2, col: 6, row: 7, number: "183", name: "박인혁", note: "" }, { ech: 2, col: 7, row: 7, number: "184", name: "송연우", note: "" }, { ech: 2, col: 8, row: 7, number: "185", name: "신승기", note: "" },
             { ech: 2, col: 1, row: 8, number: "186", name: "오서준", note: "" }, { ech: 2, col: 2, row: 8, number: "187", name: "이도현", note: "" }, { ech: 2, col: 3, row: 8, number: "188", name: "이민성", note: "" }, { ech: 2, col: 4, row: 8, number: "189", name: "임종화", note: "" }, { ech: 2, col: 5, row: 8, number: "190", name: "장민성", note: "" }, { ech: 2, col: 6, row: 8, number: "191", name: "전창현", note: "" }, { ech: 2, col: 7, row: 8, number: "192", name: "정정훈", note: "" }, { ech: 2, col: 8, row: 8, number: "194", name: "최우진", note: "" },
             { ech: 2, col: 1, row: 9, number: "195", name: "최준혁", note: "" }, { ech: 2, col: 2, row: 9, number: "196", name: "홍준혁", note: "" }, { ech: 2, col: 3, row: 9, number: "197", name: "김건하", note: "" }, { ech: 2, col: 4, row: 9, number: "198", name: "김남운", note: "" }, { ech: 2, col: 5, row: 9, number: "200", name: "김상현", note: "" }, { ech: 2, col: 6, row: 9, number: "202", name: "남두환", note: "" }, { ech: 2, col: 7, row: 9, number: "205", name: "박지원", note: "" }, { ech: 2, col: 8, row: 9, number: "206", name: "변승우", note: "" },
-            { ech: 2, col: 1, row: 10, number: "208", name: "오준영", note: "" }, { ech: 2, col: 2, row: 10, number: "211", name: "이강", note: "" }, { ech: 2, col: 3, row: 10, number: "212", name: "이정규", note: "" }, { ech: 2, col: 4, row: 10, number: "214", name: "이진우", note: "" }, { ech: 2, col: 5, row: 10, number: "216", name: "이한빈", note: "" }, { ech: 2, col: 6, row: 10, number: "218", name: "임철희", note: "" }, { ech: 2, col: 7, row: 10, number: "219", name: "정다훈", note: "" }, { ech: 2, col: 8, row: 10, number: "221", name: "지승효", note: "" },
-            { ech: 2, col: 1, row: 11, number: "224", name: "최효명", note: "" }
+            { ech: 2, col: 1, row: 10, number: "208", name: "오준영", note: "" }, { ech: 2, col: 2, row: 10, number: "211", name: "이강", note: "" }, { ech: 2, col: 3, row: 10, number: "212", name: "이정규", note: "" }, { ech: 2, col: 4, row: 10, number: "214", name: "이진우", note: "" }, { ech: 2, col: 5, row: 10, number: "216", name: "이한빈", note: "" }, { ech: 2, col: 6, row: 10, number: "218", name: "임철희", note: "" }, { ech: 2, col: 7, row: 10, number: "219", name: "정다훈", note: "" }, { ech: 2, col: 8, row: 10, number: "221", name: "지승효", note: "" }, { ech: 2, col: 1, row: 11, number: "224", name: "최효명", note: "" }
         ];
 
-        // 이전 구버전 데이터(col: 1~16) 저장분 호환 변환 함수
+        // 기존 구버전 데이터(col: 1~16) 자동 변환 및 데이터 로드
         function loadTraineesData() {
             let data = JSON.parse(localStorage.getItem('traineeList'));
             if (!data) return [...defaultData];
             
-            // 기존 col: 1..16 데이터가 저장되어 있는 경우 ech, col 자동 변환
             return data.map(t => {
                 let ech = parseInt(t.ech);
                 let col = parseInt(t.col) || 1;
@@ -260,67 +259,64 @@
         let isDragMode = false;
         let selectedSeatForSwap = null;
         let draggedSeatSource = null;
-        let passwordCallback = null;
+        let pwdCallback = null;
 
-        function getTotalRows() {
-            const maxRow = traineesData.reduce((max, t) => Math.max(max, parseInt(t.row) || 1), 11);
-            return Math.max(11, Math.min(21, maxRow));
-        }
-
-        function customAlert(msg) {
+        // 알림 토스트 UI 생성 및 출력
+        function showToast(msg, isError = false) {
             let toast = document.getElementById('custom-toast');
             if (!toast) {
                 toast = document.createElement('div');
                 toast.id = 'custom-toast';
-                toast.className = 'fixed top-5 left-1/2 -translate-x-1/2 bg-slate-800 border border-emerald-500 text-white text-xs px-4 py-3 rounded-xl shadow-2xl z-[100] transition-all duration-300 opacity-0 pointer-events-none max-w-sm text-center font-medium';
                 document.body.appendChild(toast);
             }
+            toast.className = `fixed top-5 left-1/2 -translate-x-1/2 px-4 py-3 rounded-xl shadow-2xl z-[100] transition-all duration-300 text-xs font-semibold text-center max-w-sm ${isError ? 'bg-rose-900 border border-rose-500 text-rose-100' : 'bg-slate-800 border border-emerald-500 text-emerald-300'}`;
             toast.innerText = msg;
-            toast.classList.remove('opacity-0', 'pointer-events-none');
-            toast.classList.add('opacity-100');
+            toast.style.opacity = '1';
+            toast.style.pointerEvents = 'auto';
             setTimeout(() => {
-                toast.classList.remove('opacity-100');
-                toast.classList.add('opacity-0', 'pointer-events-none');
+                toast.style.opacity = '0';
+                toast.style.pointerEvents = 'none';
             }, 3000);
         }
 
-        function openPasswordModal(title, callback) {
+        // 비밀번호 입력 모달 핸들러
+        function promptPassword(title, callback) {
             document.getElementById('pwd-modal-title').innerText = title;
             const input = document.getElementById('pwd-modal-input');
             input.value = '';
-            passwordCallback = callback;
+            pwdCallback = callback;
             document.getElementById('password-modal').classList.remove('hidden');
             setTimeout(() => input.focus(), 100);
         }
 
         function closePasswordModal() {
             document.getElementById('password-modal').classList.add('hidden');
-            passwordCallback = null;
+            pwdCallback = null;
         }
 
-        document.getElementById('pwd-modal-confirm').onclick = () => {
+        function confirmPasswordModal() {
             const val = document.getElementById('pwd-modal-input').value;
             closePasswordModal();
-            if (passwordCallback) passwordCallback(val);
-        };
+            if (pwdCallback) pwdCallback(val);
+        }
 
         document.getElementById('pwd-modal-input').onkeydown = (e) => {
-            if (e.key === 'Enter') {
-                document.getElementById('pwd-modal-confirm').click();
-            }
+            if (e.key === 'Enter') confirmPasswordModal();
         };
 
         function requestDragModeToggle() {
             if (!isDragMode) {
-                openPasswordModal("자리 이동 모드를 활성화하려면 비밀번호를 입력하세요.", (pass) => {
+                promptPassword("자리 이동 모드 활성화 (비밀번호)", (pass) => {
                     if (pass === "1989") {
                         setDragMode(true);
+                        showToast("자리 이동 모드가 활성화되었습니다.");
                     } else if (pass !== null && pass !== '') {
-                        customAlert("비밀번호가 일치하지 않습니다.");
+                        showToast("비밀번호가 일치하지 않습니다.", true);
                     }
                 });
             } else {
                 setDragMode(false);
+                showToast("자리 이동 모드가 비활성화되었습니다.");
             }
         }
 
@@ -339,6 +335,11 @@
                 msg.classList.add('hidden');
             }
             renderBoard();
+        }
+
+        function getTotalRows() {
+            const maxRow = traineesData.reduce((max, t) => Math.max(max, parseInt(t.row) || 1), 11);
+            return Math.max(11, Math.min(21, maxRow));
         }
 
         function renderBoard() {
@@ -378,7 +379,7 @@
                     
                     if (person) {
                         const isSelected = selectedSeatForSwap && selectedSeatForSwap.ech === echelonNum && selectedSeatForSwap.col === c && selectedSeatForSwap.row === r;
-                        seatBtn.className = `p-1 rounded border text-center text-[10px] transition ${isSelected ? 'selected-swap' : echelonBg} border-slate-700 hover:border-emerald-500`;
+                        seatBtn.className = `p-1 rounded border text-center text-[10px] transition ${isSelected ? 'selected-swap' : echelonBg} border-slate-700 hover:border-emerald-500 min-h-[38px] flex flex-col items-center justify-center cursor-pointer`;
                         seatBtn.innerHTML = `<span class="block text-[8px] text-slate-400 font-mono">${person.number}</span><span class="font-bold text-slate-100">${person.name}</span>`;
                         
                         if (isDragMode) {
@@ -399,7 +400,7 @@
                             }
                         };
                     } else {
-                        seatBtn.className = "bg-slate-900/50 border border-slate-800/80 rounded min-h-[36px]";
+                        seatBtn.className = "bg-slate-900/50 border border-slate-800/80 rounded min-h-[38px] hover:border-slate-600 transition cursor-pointer";
                         
                         if (isDragMode) {
                             seatBtn.ondragover = (e) => handleDragOver(e, seatBtn);
@@ -454,19 +455,29 @@
                 if (person) {
                     selectedSeatForSwap = { ech, col, row };
                     renderBoard();
+                    const banner = document.getElementById('search-result-banner');
+                    banner.className = "p-2.5 rounded-lg text-xs text-center font-semibold bg-sky-500/20 text-sky-300 border border-sky-500/30";
+                    banner.innerHTML = `📍 <strong>[${person.number}번 ${person.name}]</strong> 후보생이 선택되었습니다. 이동/교환할 자리를 선택하세요.`;
+                    banner.classList.remove('hidden');
+                } else {
+                    showToast("선택한 자리에 후보생이 없습니다. 이동할 후보생 카드를 먼저 선택하세요.", true);
                 }
             } else {
-                if (selectedSeatForSwap.ech !== ech || selectedSeatForSwap.col !== col || selectedSeatForSwap.row !== row) {
+                if (selectedSeatForSwap.ech === ech && selectedSeatForSwap.col === col && selectedSeatForSwap.row === row) {
+                    selectedSeatForSwap = null;
+                    renderBoard();
+                    document.getElementById('search-result-banner').classList.add('hidden');
+                    showToast("선택이 취소되었습니다.");
+                } else {
                     swapOrMoveSeat(selectedSeatForSwap.ech, selectedSeatForSwap.col, selectedSeatForSwap.row, ech, col, row);
+                    selectedSeatForSwap = null;
                 }
-                selectedSeatForSwap = null;
-                renderBoard();
             }
         }
 
         function swapOrMoveSeat(srcEch, srcCol, srcRow, tarEch, tarCol, tarRow) {
-            const srcPerson = traineesData.find(t => parseInt(t.ech) === srcEch && parseInt(t.col) === srcCol && parseInt(t.row) === srcRow);
-            const tarPerson = traineesData.find(t => parseInt(t.ech) === tarEch && parseInt(t.col) === tarCol && parseInt(t.row) === tarRow);
+            const srcPerson = traineesData.find(t => parseInt(t.ech) === parseInt(srcEch) && parseInt(t.col) === parseInt(srcCol) && parseInt(t.row) === parseInt(srcRow));
+            const tarPerson = traineesData.find(t => parseInt(t.ech) === parseInt(tarEch) && parseInt(t.col) === parseInt(tarCol) && parseInt(t.row) === parseInt(tarRow));
 
             if (!srcPerson) return;
 
@@ -474,7 +485,7 @@
                 srcPerson.ech = tarEch;
                 srcPerson.col = tarCol;
                 srcPerson.row = tarRow;
-                
+
                 tarPerson.ech = srcEch;
                 tarPerson.col = srcCol;
                 tarPerson.row = srcRow;
@@ -491,8 +502,8 @@
             banner.className = "p-2.5 rounded-lg text-xs text-center font-semibold bg-sky-500/20 text-sky-300 border border-sky-500/30";
             
             banner.innerHTML = tarPerson 
-                ? `<strong>[${srcPerson.name}]</strong> 후보생과 <strong>[${tarPerson.name}]</strong> 후보생의 자리가 교환되었습니다.`
-                : `<strong>[${srcPerson.name}]</strong> 후보생이 <strong>제${tarEch}제대 ${tarCol}열 ${tarRow}행</strong> 위치로 이동되었습니다.`;
+                ? `🔄 <strong>[${srcPerson.name}]</strong> 후보생과 <strong>[${tarPerson.name}]</strong> 후보생의 자리가 교환되었습니다.`
+                : `🚚 <strong>[${srcPerson.name}]</strong> 후보생이 <strong>제${tarEch}제대 ${tarCol}열 ${tarRow}행</strong> 위치로 이동되었습니다.`;
             banner.classList.remove('hidden');
         }
 
@@ -531,7 +542,7 @@
                     banner.classList.remove('hidden');
                 } else {
                     banner.className = "p-3 rounded-lg text-xs sm:text-sm text-center font-semibold bg-amber-500/20 text-amber-300 border border-amber-500/30";
-                    banner.innerHTML = `[${match.number}번 ${match.name}] 위치: <strong>제${match.ech}제대 ${match.col}열 ${match.row}행</strong> (화면에 표시되지 않는 행입니다)`;
+                    banner.innerHTML = `[${match.number}번 ${match.name}] 위치: <strong>제${match.ech}제대 ${match.col}열 ${match.row}행</strong> (화면에 표시 영역 외)`;
                     banner.classList.remove('hidden');
                 }
             } else {
@@ -549,11 +560,11 @@
         }
 
         function checkAdminPassword() {
-            openPasswordModal("관리자 비밀번호를 입력하세요.", (pass) => {
+            promptPassword("관리자 설정 접근 (비밀번호)", (pass) => {
                 if (pass === "1989") {
                     openAdminModal();
                 } else if (pass !== null && pass !== '') {
-                    customAlert("비밀번호가 일치하지 않습니다.");
+                    showToast("비밀번호가 일치하지 않습니다.", true);
                 }
             });
         }
@@ -676,7 +687,7 @@
             link.href = URL.createObjectURL(blob);
             link.download = 'index.html';
             link.click();
-            customAlert("수정사항이 반영된 [index.html] 파일이 다운로드되었습니다.");
+            showToast("수정사항이 반영된 [index.html] 파일이 다운로드되었습니다.");
         }
 
         function copyUpdatedHTML() {
@@ -688,12 +699,12 @@
             textarea.select();
             document.execCommand('copy');
             document.body.removeChild(textarea);
-            customAlert("수정된 전체 소스코드가 클립보드에 복사되었습니다.");
+            showToast("수정된 전체 소스코드가 클립보드에 복사되었습니다.");
         }
 
         function applyPastedText() {
             const rawText = document.getElementById('paste-textarea').value.trim();
-            if (!rawText) return customAlert("붙여넣을 텍스트를 입력해주세요.");
+            if (!rawText) return showToast("붙여넣을 텍스트를 입력해주세요.", true);
 
             const lines = rawText.split(/\r?\n/);
             const startIndex = (lines[0].includes("교번") || lines[0].includes("성명") || lines[0].includes("제대")) ? 1 : 0;
@@ -737,9 +748,9 @@
                 localStorage.setItem('traineeList', JSON.stringify(traineesData));
                 openAdminModal();
                 renderBoard();
-                customAlert(`총 ${parsed.length}명의 명단이 반영되었습니다.`);
+                showToast(`총 ${parsed.length}명의 명단이 반영되었습니다.`);
             } else {
-                customAlert("데이터 형식을 확인해주세요. (제대, 열, 행, 교번, 성명, 비고 순서)");
+                showToast("데이터 형식을 확인해주세요. (제대, 열, 행, 교번, 성명, 비고)", true);
             }
         }
 
@@ -794,9 +805,9 @@
                     localStorage.setItem('traineeList', JSON.stringify(traineesData));
                     openAdminModal();
                     renderBoard();
-                    customAlert("CSV 파일이 적용되었습니다.");
+                    showToast("CSV 파일이 성공적으로 적용되었습니다.");
                 } catch(err) {
-                    customAlert("CSV 파일을 읽는 중 오류가 발생했습니다.");
+                    showToast("CSV 파일을 읽는 중 오류가 발생했습니다.", true);
                 }
             };
             reader.readAsText(e.target.files[0], 'euc-kr');
@@ -808,7 +819,7 @@
         function saveLocalOnly() {
             syncFormValues();
             localStorage.setItem('traineeList', JSON.stringify(traineesData));
-            customAlert("이 기기에 저장되었습니다.");
+            showToast("이 기기에 저장되었습니다.");
             toggleModal('detail-modal');
             renderBoard();
         }
@@ -822,7 +833,7 @@
             dummy.select();
             document.execCommand('copy');
             document.body.removeChild(dummy);
-            customAlert("웹사이트 주소가 복사되었습니다.");
+            showToast("웹사이트 주소가 복사되었습니다.");
         }
 
         function openCommanderModal() {
@@ -869,11 +880,11 @@
         }
 
         function requestQuickEditAuth(index) {
-            openPasswordModal("후보생 정보를 수정하려면 비밀번호를 입력하세요.", (pass) => {
+            promptPassword("후보생 정보 수정 (비밀번호)", (pass) => {
                 if (pass === "1989") {
                     renderEditableDetail(index);
                 } else if (pass !== null && pass !== '') {
-                    customAlert("비밀번호가 일치하지 않습니다.");
+                    showToast("비밀번호가 일치하지 않습니다.", true);
                 }
             });
         }
@@ -918,7 +929,7 @@
             const newNote = document.getElementById('quick-edit-note').value.trim();
 
             if (!newName) {
-                return customAlert("성명을 입력해 주세요.");
+                return showToast("성명을 입력해 주세요.", true);
             }
 
             traineesData[idx].number = newNum;
@@ -926,7 +937,7 @@
             traineesData[idx].note = newNote;
 
             localStorage.setItem('traineeList', JSON.stringify(traineesData));
-            customAlert(`[${newName}] 후보생 정보가 수정되었습니다.`);
+            showToast(`[${newName}] 후보생 정보가 수정되었습니다.`);
             toggleModal('detail-modal');
             renderBoard();
         }
