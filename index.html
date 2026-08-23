@@ -112,7 +112,7 @@
             <div class="flex justify-between items-center text-[11px] text-slate-400">
                 <span id="drag-status-msg" class="text-sky-400 font-medium hidden">관리자 권한 활성화: 카드를 끌어놓거나 선택하여 자리를 교환하세요.</span>
                 <span class="text-slate-400">좌우로 스크롤하여 전체 대열을 확인하세요.</span>
-                <span class="ml-auto">총 163명 (지휘자 1명 + 대열 162명)</span>
+                <span class="ml-auto" id="total-trainees-count">총 163명 (지휘자 1명 + 대열 162명)</span>
             </div>
 
             <!-- 단일 좌우 스크롤 컨테이너 -->
@@ -164,6 +164,18 @@
         <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-2xl w-full p-5 shadow-2xl overflow-hidden" id="modal-content"></div>
     </div>
 
+    <!-- 비밀번호 입력 모달 -->
+    <div id="password-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden z-[60] flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-xs w-full p-5 space-y-4 shadow-2xl text-center">
+            <h3 class="text-sm font-bold text-amber-400" id="pwd-modal-title">관리자 비밀번호 입력</h3>
+            <input type="password" id="pwd-modal-input" placeholder="비밀번호" class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white text-center focus:outline-none focus:border-emerald-500 font-mono">
+            <div class="flex gap-2">
+                <button id="pwd-modal-confirm" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2 rounded-lg text-xs transition">확인</button>
+                <button onclick="closePasswordModal()" class="flex-1 bg-slate-700 hover:bg-slate-600 text-slate-300 font-medium py-2 rounded-lg text-xs transition">취소</button>
+            </div>
+        </div>
+    </div>
+
     <!-- 안내 모달 -->
     <div id="notice-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
         <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-sm w-full p-5 space-y-4 shadow-2xl text-slate-300 text-xs sm:text-sm">
@@ -172,7 +184,7 @@
                 <button onclick="toggleModal('notice-modal')" class="text-slate-400 hover:text-white text-xl">&times;</button>
             </h3>
             <div class="space-y-2.5 leading-relaxed">
-                <p>1. 교번(예: 76) 또는 성명(예: 박철완)을 입력하시고 <strong>[조회하기]</strong> 버튼을 누르시면 좌석 위치가 깜빡이며 표시됩니다.</p>
+                <p>1. 교번 또는 성명을 입력하시고 <strong>[조회하기]</strong> 버튼을 누르시면 좌석 위치가 깜빡이며 표시됩니다.</p>
                 <p>2. 위쪽은 단상(사열대) 방향이며 아래쪽은 출입문 방향입니다.</p>
                 <p>3. 화면을 <strong>좌우로 스크롤</strong>하여 전체 대열을 연속해서 확인하실 수 있습니다.</p>
                 <p>4. 좌석 카드를 클릭하면 상세 정보 확인 및 개별 정보 수정을 진행할 수 있습니다 (관리자 권한 필요).</p>
@@ -184,50 +196,129 @@
     </div>
     
     <script>
-        // 66번 제외 및 순차 당김 적용 기본 데이터 (총 162명)
+        // 66번 제외 및 ech(제대 1/2), col(열 1~8), row(행 1~21) 구조로 명확히 정돈된 기본 데이터 (총 162명)
         const defaultData = [
             // 제1제대 (81명: 1~10행 각 8명, 11행 1명)
-            { col: 1, row: 1, number: "1", name: "강민우", note: "" }, { col: 2, row: 1, number: "3", name: "고경민", note: "" }, { col: 3, row: 1, number: "5", name: "곽민혁", note: "" }, { col: 4, row: 1, number: "7", name: "구민제", note: "" }, { col: 5, row: 1, number: "8", name: "구승범", note: "" }, { col: 6, row: 1, number: "9", name: "구휘성", note: "" }, { col: 7, row: 1, number: "10", name: "권광림", note: "" }, { col: 8, row: 1, number: "11", name: "권선우", note: "" },
-            { col: 1, row: 2, number: "12", name: "권성찬", note: "" }, { col: 2, row: 2, number: "13", name: "김강휘", note: "" }, { col: 3, row: 2, number: "14", name: "김건우", note: "" }, { col: 4, row: 2, number: "15", name: "김경모", note: "" }, { col: 5, row: 2, number: "18", name: "김대현", note: "" }, { col: 6, row: 2, number: "19", name: "김덕현", note: "" }, { col: 7, row: 2, number: "20", name: "김도현", note: "" }, { col: 8, row: 2, number: "21", name: "김동현", note: "" },
-            { col: 1, row: 3, number: "22", name: "김동형", note: "" }, { col: 2, row: 3, number: "26", name: "김민준", note: "" }, { col: 3, row: 3, number: "28", name: "김병수", note: "" }, { col: 4, row: 3, number: "29", name: "김승하", note: "" }, { col: 5, row: 3, number: "33", name: "김어진", note: "" }, { col: 6, row: 3, number: "34", name: "김영광", note: "" }, { col: 7, row: 3, number: "36", name: "김원철", note: "" }, { col: 8, row: 3, number: "38", name: "김윤찬", note: "" },
-            { col: 1, row: 4, number: "39", name: "김인수", note: "" }, { col: 2, row: 4, number: "40", name: "김종빈", note: "" }, { col: 3, row: 4, number: "41", name: "김준권", note: "" }, { col: 4, row: 4, number: "43", name: "김준혁", note: "" }, { col: 5, row: 4, number: "44", name: "김진우", note: "" }, { col: 6, row: 4, number: "46", name: "김태규", note: "" }, { col: 7, row: 4, number: "47", name: "김태연", note: "" }, { col: 8, row: 4, number: "48", name: "김하진", note: "" },
-            { col: 1, row: 5, number: "49", name: "김현민", note: "" }, { col: 2, row: 5, number: "51", name: "김현우", note: "" }, { col: 3, row: 5, number: "53", name: "김현준", note: "" }, { col: 4, row: 5, number: "54", name: "김현준", note: "" }, { col: 5, row: 5, number: "55", name: "김현중", note: "" }, { col: 6, row: 5, number: "56", name: "나겸우", note: "" }, { col: 7, row: 5, number: "57", name: "나시후", note: "" }, { col: 8, row: 5, number: "58", name: "류호식", note: "" },
-            { col: 1, row: 6, number: "59", name: "박건욱", note: "" }, { col: 2, row: 6, number: "60", name: "박심윤", note: "" }, { col: 3, row: 6, number: "61", name: "박상권", note: "" }, { col: 4, row: 6, number: "63", name: "박승태", note: "" }, { col: 5, row: 6, number: "64", name: "박시환", note: "" }, { col: 6, row: 6, number: "65", name: "박예찬", note: "" }, { col: 7, row: 6, number: "67", name: "박제연", note: "" }, { col: 8, row: 6, number: "68", name: "박주성", note: "" },
-            { col: 1, row: 7, number: "69", name: "박주형", note: "" }, { col: 2, row: 7, number: "70", name: "박준성", note: "" }, { col: 3, row: 7, number: "71", name: "박중정", note: "" }, { col: 4, row: 7, number: "73", name: "박진응", note: "" }, { col: 5, row: 7, number: "75", name: "박찬민", note: "" }, { col: 6, row: 7, number: "77", name: "박태수", note: "" }, { col: 7, row: 7, number: "78", name: "박현준", note: "" }, { col: 8, row: 7, number: "80", name: "백승곤", note: "" },
-            { col: 1, row: 8, number: "81", name: "백승규", note: "" }, { col: 2, row: 8, number: "83", name: "서재경", note: "" }, { col: 3, row: 8, number: "84", name: "서창빈", note: "" }, { col: 4, row: 8, number: "85", name: "성유찬", note: "" }, { col: 5, row: 8, number: "86", name: "소현섭", note: "" }, { col: 6, row: 8, number: "87", name: "손호민", note: "" }, { col: 7, row: 8, number: "88", name: "송수힌", note: "" }, { col: 8, row: 8, number: "89", name: "신연성", note: "" },
-            { col: 1, row: 9, number: "90", name: "신혁수", note: "" }, { col: 2, row: 9, number: "92", name: "안세민", note: "" }, { col: 3, row: 9, number: "93", name: "안창하", note: "" }, { col: 4, row: 9, number: "94", name: "양인권", note: "" }, { col: 5, row: 9, number: "97", name: "오세힌", note: "" }, { col: 6, row: 9, number: "98", name: "오태환", note: "" }, { col: 7, row: 9, number: "99", name: "오형석", note: "" }, { col: 8, row: 9, number: "100", name: "우림", note: "" },
-            { col: 1, row: 10, number: "101", name: "우성환", note: "" }, { col: 2, row: 10, number: "102", name: "유범진", note: "" }, { col: 3, row: 10, number: "104", name: "윤시진", note: "" }, { col: 4, row: 10, number: "105", name: "윤여찬", note: "" }, { col: 5, row: 10, number: "106", name: "윤정현", note: "" }, { col: 6, row: 10, number: "107", name: "윤지원", note: "" }, { col: 7, row: 10, number: "108", name: "윤현빈", note: "" }, { col: 8, row: 10, number: "109", name: "이강교", note: "" },
-            { col: 1, row: 11, number: "110", name: "이노영", note: "" },
+            { ech: 1, col: 1, row: 1, number: "1", name: "강민우", note: "" }, { ech: 1, col: 2, row: 1, number: "3", name: "고경민", note: "" }, { ech: 1, col: 3, row: 1, number: "5", name: "곽민혁", note: "" }, { ech: 1, col: 4, row: 1, number: "7", name: "구민제", note: "" }, { ech: 1, col: 5, row: 1, number: "8", name: "구승범", note: "" }, { ech: 1, col: 6, row: 1, number: "9", name: "구휘성", note: "" }, { ech: 1, col: 7, row: 1, number: "10", name: "권광림", note: "" }, { ech: 1, col: 8, row: 1, number: "11", name: "권선우", note: "" },
+            { ech: 1, col: 1, row: 2, number: "12", name: "권성찬", note: "" }, { ech: 1, col: 2, row: 2, number: "13", name: "김강휘", note: "" }, { ech: 1, col: 3, row: 2, number: "14", name: "김건우", note: "" }, { ech: 1, col: 4, row: 2, number: "15", name: "김경모", note: "" }, { ech: 1, col: 5, row: 2, number: "18", name: "김대현", note: "" }, { ech: 1, col: 6, row: 2, number: "19", name: "김덕현", note: "" }, { ech: 1, col: 7, row: 2, number: "20", name: "김도현", note: "" }, { ech: 1, col: 8, row: 2, number: "21", name: "김동현", note: "" },
+            { ech: 1, col: 1, row: 3, number: "22", name: "김동형", note: "" }, { ech: 1, col: 2, row: 3, number: "26", name: "김민준", note: "" }, { ech: 1, col: 3, row: 3, number: "28", name: "김병수", note: "" }, { ech: 1, col: 4, row: 3, number: "29", name: "김승하", note: "" }, { ech: 1, col: 5, row: 3, number: "33", name: "김어진", note: "" }, { ech: 1, col: 6, row: 3, number: "34", name: "김영광", note: "" }, { ech: 1, col: 7, row: 3, number: "36", name: "김원철", note: "" }, { ech: 1, col: 8, row: 3, number: "38", name: "김윤찬", note: "" },
+            { ech: 1, col: 1, row: 4, number: "39", name: "김인수", note: "" }, { ech: 1, col: 2, row: 4, number: "40", name: "김종빈", note: "" }, { ech: 1, col: 3, row: 4, number: "41", name: "김준권", note: "" }, { ech: 1, col: 4, row: 4, number: "43", name: "김준혁", note: "" }, { ech: 1, col: 5, row: 4, number: "44", name: "김진우", note: "" }, { ech: 1, col: 6, row: 4, number: "46", name: "김태규", note: "" }, { ech: 1, col: 7, row: 4, number: "47", name: "김태연", note: "" }, { ech: 1, col: 8, row: 4, number: "48", name: "김하진", note: "" },
+            { ech: 1, col: 1, row: 5, number: "49", name: "김현민", note: "" }, { ech: 1, col: 2, row: 5, number: "51", name: "김현우", note: "" }, { ech: 1, col: 3, row: 5, number: "53", name: "김현준", note: "" }, { ech: 1, col: 4, row: 5, number: "54", name: "김현준", note: "" }, { ech: 1, col: 5, row: 5, number: "55", name: "김현중", note: "" }, { ech: 1, col: 6, row: 5, number: "56", name: "나겸우", note: "" }, { ech: 1, col: 7, row: 5, number: "57", name: "나시후", note: "" }, { ech: 1, col: 8, row: 5, number: "58", name: "류호식", note: "" },
+            { ech: 1, col: 1, row: 6, number: "59", name: "박건욱", note: "" }, { ech: 1, col: 2, row: 6, number: "60", name: "박심윤", note: "" }, { ech: 1, col: 3, row: 6, number: "61", name: "박상권", note: "" }, { ech: 1, col: 4, row: 6, number: "63", name: "박승태", note: "" }, { ech: 1, col: 5, row: 6, number: "64", name: "박시환", note: "" }, { ech: 1, col: 6, row: 6, number: "65", name: "박예찬", note: "" }, { ech: 1, col: 7, row: 6, number: "67", name: "박제연", note: "" }, { ech: 1, col: 8, row: 6, number: "68", name: "박주성", note: "" },
+            { ech: 1, col: 1, row: 7, number: "69", name: "박주형", note: "" }, { ech: 1, col: 2, row: 7, number: "70", name: "박준성", note: "" }, { ech: 1, col: 3, row: 7, number: "71", name: "박중정", note: "" }, { ech: 1, col: 4, row: 7, number: "73", name: "박진응", note: "" }, { ech: 1, col: 5, row: 7, number: "75", name: "박찬민", note: "" }, { ech: 1, col: 6, row: 7, number: "77", name: "박태수", note: "" }, { ech: 1, col: 7, row: 7, number: "78", name: "박현준", note: "" }, { ech: 1, col: 8, row: 7, number: "80", name: "백승곤", note: "" },
+            { ech: 1, col: 1, row: 8, number: "81", name: "백승규", note: "" }, { ech: 1, col: 2, row: 8, number: "83", name: "서재경", note: "" }, { ech: 1, col: 3, row: 8, number: "84", name: "서창빈", note: "" }, { ech: 1, col: 4, row: 8, number: "85", name: "성유찬", note: "" }, { ech: 1, col: 5, row: 8, number: "86", name: "소현섭", note: "" }, { ech: 1, col: 6, row: 8, number: "87", name: "손호민", note: "" }, { ech: 1, col: 7, row: 8, number: "88", name: "송수힌", note: "" }, { ech: 1, col: 8, row: 8, number: "89", name: "신연성", note: "" },
+            { ech: 1, col: 1, row: 9, number: "90", name: "신혁수", note: "" }, { ech: 1, col: 2, row: 9, number: "92", name: "안세민", note: "" }, { ech: 1, col: 3, row: 9, number: "93", name: "안창하", note: "" }, { ech: 1, col: 4, row: 9, number: "94", name: "양인권", note: "" }, { ech: 1, col: 5, row: 9, number: "97", name: "오세힌", note: "" }, { ech: 1, col: 6, row: 9, number: "98", name: "오태환", note: "" }, { ech: 1, col: 7, row: 9, number: "99", name: "오형석", note: "" }, { ech: 1, col: 8, row: 9, number: "100", name: "우림", note: "" },
+            { ech: 1, col: 1, row: 10, number: "101", name: "우성환", note: "" }, { ech: 1, col: 2, row: 10, number: "102", name: "유범진", note: "" }, { ech: 1, col: 3, row: 10, number: "104", name: "윤시진", note: "" }, { ech: 1, col: 4, row: 10, number: "105", name: "윤여찬", note: "" }, { ech: 1, col: 5, row: 10, number: "106", name: "윤정현", note: "" }, { ech: 1, col: 6, row: 10, number: "107", name: "윤지원", note: "" }, { ech: 1, col: 7, row: 10, number: "108", name: "윤현빈", note: "" }, { ech: 1, col: 8, row: 10, number: "109", name: "이강교", note: "" },
+            { ech: 1, col: 1, row: 11, number: "110", name: "이노영", note: "" },
 
             // 제2제대 (81명: 1~10행 각 8명, 11행 1명)
-            { col: 9, row: 1, number: "111", name: "이도윤", note: "" }, { col: 10, row: 1, number: "112", name: "이범수", note: "" }, { col: 11, row: 1, number: "113", name: "이성민", note: "" }, { col: 12, row: 1, number: "114", name: "이승민", note: "" }, { col: 13, row: 1, number: "115", name: "이승재", note: "" }, { col: 14, row: 1, number: "116", name: "이승찬", note: "" }, { col: 15, row: 1, number: "117", name: "이승현", note: "" }, { col: 16, row: 1, number: "118", name: "이연우", note: "" },
-            { col: 9, row: 2, number: "119", name: "이유승", note: "" }, { col: 10, row: 2, number: "120", name: "이윤호", note: "" }, { col: 11, row: 2, number: "121", name: "이재훈", note: "" }, { col: 12, row: 2, number: "122", name: "이정민", note: "" }, { col: 13, row: 2, number: "123", name: "이정수", note: "" }, { col: 14, row: 2, number: "124", name: "이종환", note: "" }, { col: 15, row: 2, number: "125", name: "이준성", note: "" }, { col: 16, row: 2, number: "127", name: "이지원", note: "" },
-            { col: 9, row: 3, number: "129", name: "이태윤", note: "" }, { col: 10, row: 3, number: "133", name: "장한빈", note: "" }, { col: 11, row: 3, number: "134", name: "점종훈", note: "" }, { col: 12, row: 3, number: "135", name: "정규현", note: "" }, { col: 13, row: 3, number: "137", name: "정무경", note: "" }, { col: 14, row: 3, number: "138", name: "정서헌", note: "" }, { col: 15, row: 3, number: "139", name: "정성우", note: "" }, { col: 16, row: 3, number: "140", name: "정준호", note: "" },
-            { col: 9, row: 4, number: "141", name: "정지오", note: "" }, { col: 10, row: 4, number: "142", name: "정창민", note: "" }, { col: 11, row: 4, number: "143", name: "정형관", note: "" }, { col: 12, row: 4, number: "144", name: "조도연", note: "" }, { col: 13, row: 4, number: "145", name: "조범주", note: "" }, { col: 14, row: 4, number: "146", name: "조우빈", note: "" }, { col: 15, row: 4, number: "147", name: "조형태", note: "" }, { col: 16, row: 4, number: "148", name: "주관영", note: "" },
-            { col: 9, row: 5, number: "149", name: "천원희", note: "" }, { col: 10, row: 5, number: "151", name: "최승훈", note: "" }, { col: 11, row: 5, number: "152", name: "최용준", note: "" }, { col: 12, row: 5, number: "153", name: "최우빈", note: "" }, { col: 13, row: 5, number: "154", name: "최윤우", note: "" }, { col: 14, row: 5, number: "157", name: "최정현", note: "" }, { col: 15, row: 5, number: "159", name: "최지호", note: "" }, { col: 16, row: 5, number: "161", name: "최호준", note: "" },
-            { col: 9, row: 6, number: "162", name: "하은율", note: "" }, { col: 10, row: 6, number: "163", name: "한대희", note: "" }, { col: 11, row: 6, number: "164", name: "한신혁", note: "" }, { col: 12, row: 6, number: "165", name: "한영민", note: "" }, { col: 13, row: 6, number: "167", name: "한태영", note: "" }, { col: 14, row: 6, number: "170", name: "홍지현", note: "" }, { col: 15, row: 6, number: "171", name: "홍현호", note: "" }, { col: 16, row: 6, number: "172", name: "황태빈", note: "" },
-            { col: 9, row: 7, number: "174", name: "강지우", note: "" }, { col: 10, row: 7, number: "175", name: "강민아", note: "" }, { col: 11, row: 7, number: "176", name: "고준우", note: "" }, { col: 12, row: 7, number: "178", name: "김솔민", note: "" }, { col: 13, row: 7, number: "181", name: "김지민", note: "" }, { col: 14, row: 7, number: "183", name: "박인혁", note: "" }, { col: 15, row: 7, number: "184", name: "송연우", note: "" }, { col: 16, row: 7, number: "185", name: "신승기", note: "" },
-            { col: 9, row: 8, number: "186", name: "오서준", note: "" }, { col: 10, row: 8, number: "187", name: "이도현", note: "" }, { col: 11, row: 8, number: "188", name: "이민성", note: "" }, { col: 12, row: 8, number: "189", name: "임종화", note: "" }, { col: 13, row: 8, number: "190", name: "장민성", note: "" }, { col: 14, row: 8, number: "191", name: "전창현", note: "" }, { col: 15, row: 8, number: "192", name: "정정훈", note: "" }, { col: 16, row: 8, number: "194", name: "최우진", note: "" },
-            { col: 9, row: 9, number: "195", name: "최준혁", note: "" }, { col: 10, row: 9, number: "196", name: "홍준혁", note: "" }, { col: 11, row: 9, number: "197", name: "김건하", note: "" }, { col: 12, row: 9, number: "198", name: "김남운", note: "" }, { col: 13, row: 9, number: "200", name: "김상현", note: "" }, { col: 14, row: 9, number: "202", name: "남두환", note: "" }, { col: 15, row: 9, number: "205", name: "박지원", note: "" }, { col: 16, row: 9, number: "206", name: "변승우", note: "" },
-            { col: 9, row: 10, number: "208", name: "오준영", note: "" }, { col: 10, row: 10, number: "211", name: "이강", note: "" }, { col: 11, row: 10, number: "212", name: "이정규", note: "" }, { col: 12, row: 10, number: "214", name: "이진우", note: "" }, { col: 13, row: 10, number: "216", name: "이한빈", note: "" }, { col: 14, row: 10, number: "218", name: "임철희", note: "" }, { col: 15, row: 10, number: "219", name: "정다훈", note: "" }, { col: 16, row: 10, number: "221", name: "지승효", note: "" },
-            { col: 9, row: 11, number: "224", name: "최효명", note: "" }
+            { ech: 2, col: 1, row: 1, number: "111", name: "이도윤", note: "" }, { ech: 2, col: 2, row: 1, number: "112", name: "이범수", note: "" }, { ech: 2, col: 3, row: 1, number: "113", name: "이성민", note: "" }, { ech: 2, col: 4, row: 1, number: "114", name: "이승민", note: "" }, { ech: 2, col: 5, row: 1, number: "115", name: "이승재", note: "" }, { ech: 2, col: 6, row: 1, number: "116", name: "이승찬", note: "" }, { ech: 2, col: 7, row: 1, number: "117", name: "이승현", note: "" }, { ech: 2, col: 8, row: 1, number: "118", name: "이연우", note: "" },
+            { ech: 2, col: 1, row: 2, number: "119", name: "이유승", note: "" }, { ech: 2, col: 2, row: 2, number: "120", name: "이윤호", note: "" }, { ech: 2, col: 3, row: 2, number: "121", name: "이재훈", note: "" }, { ech: 2, col: 4, row: 2, number: "122", name: "이정민", note: "" }, { ech: 2, col: 5, row: 2, number: "123", name: "이정수", note: "" }, { ech: 2, col: 6, row: 2, number: "124", name: "이종환", note: "" }, { ech: 2, col: 7, row: 2, number: "125", name: "이준성", note: "" }, { ech: 2, col: 8, row: 2, number: "127", name: "이지원", note: "" },
+            { ech: 2, col: 1, row: 3, number: "129", name: "이태윤", note: "" }, { ech: 2, col: 2, row: 3, number: "133", name: "장한빈", note: "" }, { ech: 2, col: 3, row: 3, number: "134", name: "점종훈", note: "" }, { ech: 2, col: 4, row: 3, number: "135", name: "정규현", note: "" }, { ech: 2, col: 5, row: 3, number: "137", name: "정무경", note: "" }, { ech: 2, col: 6, row: 3, number: "138", name: "정서헌", note: "" }, { ech: 2, col: 7, row: 3, number: "139", name: "정성우", note: "" }, { ech: 2, col: 8, row: 3, number: "140", name: "정준호", note: "" },
+            { ech: 2, col: 1, row: 4, number: "141", name: "정지오", note: "" }, { ech: 2, col: 2, row: 4, number: "142", name: "정창민", note: "" }, { ech: 2, col: 3, row: 4, number: "143", name: "정형관", note: "" }, { ech: 2, col: 4, row: 4, number: "144", name: "조도연", note: "" }, { ech: 2, col: 5, row: 4, number: "145", name: "조범주", note: "" }, { ech: 2, col: 6, row: 4, number: "146", name: "조우빈", note: "" }, { ech: 2, col: 7, row: 4, number: "147", name: "조형태", note: "" }, { ech: 2, col: 8, row: 4, number: "148", name: "주관영", note: "" },
+            { ech: 2, col: 1, row: 5, number: "149", name: "천원희", note: "" }, { ech: 2, col: 2, row: 5, number: "151", name: "최승훈", note: "" }, { ech: 2, col: 3, row: 5, number: "152", name: "최용준", note: "" }, { ech: 2, col: 4, row: 5, number: "153", name: "최우빈", note: "" }, { ech: 2, col: 5, row: 5, number: "154", name: "최윤우", note: "" }, { ech: 2, col: 6, row: 5, number: "157", name: "최정현", note: "" }, { ech: 2, col: 7, row: 5, number: "159", name: "최지호", note: "" }, { ech: 2, col: 8, row: 5, number: "161", name: "최호준", note: "" },
+            { ech: 2, col: 1, row: 6, number: "162", name: "하은율", note: "" }, { ech: 2, col: 2, row: 6, number: "163", name: "한대희", note: "" }, { ech: 2, col: 3, row: 6, number: "164", name: "한신혁", note: "" }, { ech: 2, col: 4, row: 6, number: "165", name: "한영민", note: "" }, { ech: 2, col: 5, row: 6, number: "167", name: "한태영", note: "" }, { ech: 2, col: 6, row: 6, number: "170", name: "홍지현", note: "" }, { ech: 2, col: 7, row: 6, number: "171", name: "홍현호", note: "" }, { ech: 2, col: 8, row: 6, number: "172", name: "황태빈", note: "" },
+            { ech: 2, col: 1, row: 7, number: "174", name: "강지우", note: "" }, { ech: 2, col: 2, row: 7, number: "175", name: "강민아", note: "" }, { ech: 2, col: 3, row: 7, number: "176", name: "고준우", note: "" }, { ech: 2, col: 4, row: 7, number: "178", name: "김솔민", note: "" }, { ech: 2, col: 5, row: 7, number: "181", name: "김지민", note: "" }, { ech: 2, col: 6, row: 7, number: "183", name: "박인혁", note: "" }, { ech: 2, col: 7, row: 7, number: "184", name: "송연우", note: "" }, { ech: 2, col: 8, row: 7, number: "185", name: "신승기", note: "" },
+            { ech: 2, col: 1, row: 8, number: "186", name: "오서준", note: "" }, { ech: 2, col: 2, row: 8, number: "187", name: "이도현", note: "" }, { ech: 2, col: 3, row: 8, number: "188", name: "이민성", note: "" }, { ech: 2, col: 4, row: 8, number: "189", name: "임종화", note: "" }, { ech: 2, col: 5, row: 8, number: "190", name: "장민성", note: "" }, { ech: 2, col: 6, row: 8, number: "191", name: "전창현", note: "" }, { ech: 2, col: 7, row: 8, number: "192", name: "정정훈", note: "" }, { ech: 2, col: 8, row: 8, number: "194", name: "최우진", note: "" },
+            { ech: 2, col: 1, row: 9, number: "195", name: "최준혁", note: "" }, { ech: 2, col: 2, row: 9, number: "196", name: "홍준혁", note: "" }, { ech: 2, col: 3, row: 9, number: "197", name: "김건하", note: "" }, { ech: 2, col: 4, row: 9, number: "198", name: "김남운", note: "" }, { ech: 2, col: 5, row: 9, number: "200", name: "김상현", note: "" }, { ech: 2, col: 6, row: 9, number: "202", name: "남두환", note: "" }, { ech: 2, col: 7, row: 9, number: "205", name: "박지원", note: "" }, { ech: 2, col: 8, row: 9, number: "206", name: "변승우", note: "" },
+            { ech: 2, col: 1, row: 10, number: "208", name: "오준영", note: "" }, { ech: 2, col: 2, row: 10, number: "211", name: "이강", note: "" }, { ech: 2, col: 3, row: 10, number: "212", name: "이정규", note: "" }, { ech: 2, col: 4, row: 10, number: "214", name: "이진우", note: "" }, { ech: 2, col: 5, row: 10, number: "216", name: "이한빈", note: "" }, { ech: 2, col: 6, row: 10, number: "218", name: "임철희", note: "" }, { ech: 2, col: 7, row: 10, number: "219", name: "정다훈", note: "" }, { ech: 2, col: 8, row: 10, number: "221", name: "지승효", note: "" },
+            { ech: 2, col: 1, row: 11, number: "224", name: "최효명", note: "" }
         ];
 
-        const TOTAL_ROWS = 11;
-        let traineesData = JSON.parse(localStorage.getItem('traineeList')) || [...defaultData];
+        // 이전 구버전 데이터(col: 1~16) 저장분 호환 변환 함수
+        function loadTraineesData() {
+            let data = JSON.parse(localStorage.getItem('traineeList'));
+            if (!data) return [...defaultData];
+            
+            // 기존 col: 1..16 데이터가 저장되어 있는 경우 ech, col 자동 변환
+            return data.map(t => {
+                let ech = parseInt(t.ech);
+                let col = parseInt(t.col) || 1;
+                let row = parseInt(t.row) || 1;
+
+                if (!ech || isNaN(ech)) {
+                    if (col > 8) {
+                        ech = 2;
+                        col = col - 8;
+                    } else {
+                        ech = 1;
+                    }
+                }
+                return {
+                    ech: ech,
+                    col: col,
+                    row: row,
+                    number: String(t.number || "0"),
+                    name: String(t.name || ""),
+                    note: String(t.note || "")
+                };
+            });
+        }
+
+        let traineesData = loadTraineesData();
 
         let isDragMode = false;
         let selectedSeatForSwap = null;
         let draggedSeatSource = null;
+        let passwordCallback = null;
+
+        function getTotalRows() {
+            const maxRow = traineesData.reduce((max, t) => Math.max(max, parseInt(t.row) || 1), 11);
+            return Math.max(11, Math.min(21, maxRow));
+        }
+
+        function customAlert(msg) {
+            let toast = document.getElementById('custom-toast');
+            if (!toast) {
+                toast = document.createElement('div');
+                toast.id = 'custom-toast';
+                toast.className = 'fixed top-5 left-1/2 -translate-x-1/2 bg-slate-800 border border-emerald-500 text-white text-xs px-4 py-3 rounded-xl shadow-2xl z-[100] transition-all duration-300 opacity-0 pointer-events-none max-w-sm text-center font-medium';
+                document.body.appendChild(toast);
+            }
+            toast.innerText = msg;
+            toast.classList.remove('opacity-0', 'pointer-events-none');
+            toast.classList.add('opacity-100');
+            setTimeout(() => {
+                toast.classList.remove('opacity-100');
+                toast.classList.add('opacity-0', 'pointer-events-none');
+            }, 3000);
+        }
+
+        function openPasswordModal(title, callback) {
+            document.getElementById('pwd-modal-title').innerText = title;
+            const input = document.getElementById('pwd-modal-input');
+            input.value = '';
+            passwordCallback = callback;
+            document.getElementById('password-modal').classList.remove('hidden');
+            setTimeout(() => input.focus(), 100);
+        }
+
+        function closePasswordModal() {
+            document.getElementById('password-modal').classList.add('hidden');
+            passwordCallback = null;
+        }
+
+        document.getElementById('pwd-modal-confirm').onclick = () => {
+            const val = document.getElementById('pwd-modal-input').value;
+            closePasswordModal();
+            if (passwordCallback) passwordCallback(val);
+        };
+
+        document.getElementById('pwd-modal-input').onkeydown = (e) => {
+            if (e.key === 'Enter') {
+                document.getElementById('pwd-modal-confirm').click();
+            }
+        };
 
         function requestDragModeToggle() {
             if (!isDragMode) {
-                const pass = prompt("자리 이동 모드를 활성화하려면 관리자 비밀번호를 입력하세요.");
-                if (pass === "1989") {
-                    setDragMode(true);
-                } else if (pass !== null) {
-                    alert("비밀번호가 일치하지 않습니다.");
-                }
+                openPasswordModal("자리 이동 모드를 활성화하려면 비밀번호를 입력하세요.", (pass) => {
+                    if (pass === "1989") {
+                        setDragMode(true);
+                    } else if (pass !== null && pass !== '') {
+                        customAlert("비밀번호가 일치하지 않습니다.");
+                    }
+                });
             } else {
                 setDragMode(false);
             }
@@ -251,16 +342,18 @@
         }
 
         function renderBoard() {
-            renderEchelon(1, 1, 8, 'echelon1-grid', 'echelon1-headers');
-            renderEchelon(2, 9, 16, 'echelon2-grid', 'echelon2-headers');
+            const totalRows = getTotalRows();
+            renderEchelon(1, 'echelon1-grid', 'echelon1-headers', totalRows);
+            renderEchelon(2, 'echelon2-grid', 'echelon2-headers', totalRows);
             
-            const count1 = traineesData.filter(t => t.col <= 8).length;
-            const count2 = traineesData.filter(t => t.col > 8).length;
+            const count1 = traineesData.filter(t => parseInt(t.ech) === 1).length;
+            const count2 = traineesData.filter(t => parseInt(t.ech) === 2).length;
             document.getElementById('ech1-count').innerText = `${count1}명`;
             document.getElementById('ech2-count').innerText = `${count2}명`;
+            document.getElementById('total-trainees-count').innerText = `총 ${count1 + count2 + 1}명 (지휘자 1명 + 대열 ${count1 + count2}명)`;
         }
 
-        function renderEchelon(echelonNum, startCol, endCol, gridId, headerId) {
+        function renderEchelon(echelonNum, gridId, headerId, totalRows) {
             const gridElem = document.getElementById(gridId);
             const headerElem = document.getElementById(headerId);
             gridElem.innerHTML = '';
@@ -270,54 +363,53 @@
                 headerElem.innerHTML += `<div>${c}열</div>`;
             }
 
-            for (let r = 1; r <= TOTAL_ROWS; r++) {
+            for (let r = 1; r <= totalRows; r++) {
                 const rowLabel = document.createElement('div');
                 rowLabel.className = "text-[9px] flex items-center justify-center text-slate-500 font-mono";
                 rowLabel.innerText = `${r}행`;
                 gridElem.appendChild(rowLabel);
 
                 for (let c = 1; c <= 8; c++) {
-                    const actualCol = startCol + c - 1;
-                    const person = traineesData.find(t => t.col == actualCol && t.row == r);
+                    const person = traineesData.find(t => parseInt(t.ech) === echelonNum && parseInt(t.col) === c && parseInt(t.row) === r);
                     const seatBtn = document.createElement('button');
                     const echelonBg = (echelonNum === 1) ? 'bg-purple-950/60' : 'bg-emerald-950/60';
                     
+                    seatBtn.id = `seat-${echelonNum}-${c}-${r}`;
+                    
                     if (person) {
-                        const isSelected = selectedSeatForSwap && selectedSeatForSwap.col === actualCol && selectedSeatForSwap.row === r;
+                        const isSelected = selectedSeatForSwap && selectedSeatForSwap.ech === echelonNum && selectedSeatForSwap.col === c && selectedSeatForSwap.row === r;
                         seatBtn.className = `p-1 rounded border text-center text-[10px] transition ${isSelected ? 'selected-swap' : echelonBg} border-slate-700 hover:border-emerald-500`;
-                        seatBtn.id = `seat-${actualCol}-${r}`;
                         seatBtn.innerHTML = `<span class="block text-[8px] text-slate-400 font-mono">${person.number}</span><span class="font-bold text-slate-100">${person.name}</span>`;
                         
                         if (isDragMode) {
                             seatBtn.draggable = true;
-                            seatBtn.ondragstart = (e) => handleDragStart(e, actualCol, r);
+                            seatBtn.ondragstart = (e) => handleDragStart(e, echelonNum, c, r);
                             seatBtn.ondragover = (e) => handleDragOver(e, seatBtn);
                             seatBtn.ondragleave = () => seatBtn.classList.remove('drag-over');
-                            seatBtn.ondrop = (e) => handleDrop(e, actualCol, r, seatBtn);
+                            seatBtn.ondrop = (e) => handleDrop(e, echelonNum, c, r, seatBtn);
                         } else {
                             seatBtn.draggable = false;
                         }
 
                         seatBtn.onclick = () => {
                             if (isDragMode) {
-                                handleSeatClickForSwap(actualCol, r);
+                                handleSeatClickForSwap(echelonNum, c, r);
                             } else {
                                 openDetailModal(person);
                             }
                         };
                     } else {
                         seatBtn.className = "bg-slate-900/50 border border-slate-800/80 rounded min-h-[36px]";
-                        seatBtn.id = `seat-${actualCol}-${r}`;
                         
                         if (isDragMode) {
                             seatBtn.ondragover = (e) => handleDragOver(e, seatBtn);
                             seatBtn.ondragleave = () => seatBtn.classList.remove('drag-over');
-                            seatBtn.ondrop = (e) => handleDrop(e, actualCol, r, seatBtn);
+                            seatBtn.ondrop = (e) => handleDrop(e, echelonNum, c, r, seatBtn);
                         }
                         
                         seatBtn.onclick = () => {
                             if (isDragMode && selectedSeatForSwap) {
-                                handleSeatClickForSwap(actualCol, r);
+                                handleSeatClickForSwap(echelonNum, c, r);
                             }
                         };
                     }
@@ -326,10 +418,10 @@
             }
         }
 
-        function handleDragStart(e, col, row) {
+        function handleDragStart(e, ech, col, row) {
             if (!isDragMode) return;
-            draggedSeatSource = { col, row };
-            e.dataTransfer.setData('text/plain', JSON.stringify({ col, row }));
+            draggedSeatSource = { ech, col, row };
+            e.dataTransfer.setData('text/plain', JSON.stringify({ ech, col, row }));
             e.dataTransfer.effectAllowed = 'move';
         }
 
@@ -340,7 +432,7 @@
             elem.classList.add('drag-over');
         }
 
-        function handleDrop(e, targetCol, targetRow, elem) {
+        function handleDrop(e, targetEch, targetCol, targetRow, elem) {
             if (!isDragMode) return;
             e.preventDefault();
             elem.classList.remove('drag-over');
@@ -350,40 +442,44 @@
                 try { src = JSON.parse(e.dataTransfer.getData('text/plain')); } catch(err) { return; }
             }
 
-            if (src && (src.col !== targetCol || src.row !== targetRow)) {
-                swapOrMoveSeat(src.col, src.row, targetCol, targetRow);
+            if (src && (src.ech !== targetEch || src.col !== targetCol || src.row !== targetRow)) {
+                swapOrMoveSeat(src.ech, src.col, src.row, targetEch, targetCol, targetRow);
             }
             draggedSeatSource = null;
         }
 
-        function handleSeatClickForSwap(col, row) {
+        function handleSeatClickForSwap(ech, col, row) {
             if (!selectedSeatForSwap) {
-                const person = traineesData.find(t => t.col === col && t.row === row);
+                const person = traineesData.find(t => parseInt(t.ech) === ech && parseInt(t.col) === col && parseInt(t.row) === row);
                 if (person) {
-                    selectedSeatForSwap = { col, row };
+                    selectedSeatForSwap = { ech, col, row };
                     renderBoard();
                 }
             } else {
-                if (selectedSeatForSwap.col !== col || selectedSeatForSwap.row !== row) {
-                    swapOrMoveSeat(selectedSeatForSwap.col, selectedSeatForSwap.row, col, row);
+                if (selectedSeatForSwap.ech !== ech || selectedSeatForSwap.col !== col || selectedSeatForSwap.row !== row) {
+                    swapOrMoveSeat(selectedSeatForSwap.ech, selectedSeatForSwap.col, selectedSeatForSwap.row, ech, col, row);
                 }
                 selectedSeatForSwap = null;
                 renderBoard();
             }
         }
 
-        function swapOrMoveSeat(srcCol, srcRow, tarCol, tarRow) {
-            const srcPerson = traineesData.find(t => t.col == srcCol && t.row == srcRow);
-            const tarPerson = traineesData.find(t => t.col == tarCol && t.row == tarRow);
+        function swapOrMoveSeat(srcEch, srcCol, srcRow, tarEch, tarCol, tarRow) {
+            const srcPerson = traineesData.find(t => parseInt(t.ech) === srcEch && parseInt(t.col) === srcCol && parseInt(t.row) === srcRow);
+            const tarPerson = traineesData.find(t => parseInt(t.ech) === tarEch && parseInt(t.col) === tarCol && parseInt(t.row) === tarRow);
 
             if (!srcPerson) return;
 
             if (tarPerson) {
+                srcPerson.ech = tarEch;
                 srcPerson.col = tarCol;
                 srcPerson.row = tarRow;
+                
+                tarPerson.ech = srcEch;
                 tarPerson.col = srcCol;
                 tarPerson.row = srcRow;
             } else {
+                srcPerson.ech = tarEch;
                 srcPerson.col = tarCol;
                 srcPerson.row = tarRow;
             }
@@ -394,10 +490,9 @@
             const banner = document.getElementById('search-result-banner');
             banner.className = "p-2.5 rounded-lg text-xs text-center font-semibold bg-sky-500/20 text-sky-300 border border-sky-500/30";
             
-            const getColName = (c) => (c <= 8 ? `제1제대 ${c}열` : `제2제대 ${c - 8}열`);
             banner.innerHTML = tarPerson 
                 ? `<strong>[${srcPerson.name}]</strong> 후보생과 <strong>[${tarPerson.name}]</strong> 후보생의 자리가 교환되었습니다.`
-                : `<strong>[${srcPerson.name}]</strong> 후보생이 <strong>${getColName(tarCol)} ${tarRow}행</strong> 위치로 이동되었습니다.`;
+                : `<strong>[${srcPerson.name}]</strong> 후보생이 <strong>제${tarEch}제대 ${tarCol}열 ${tarRow}행</strong> 위치로 이동되었습니다.`;
             banner.classList.remove('hidden');
         }
 
@@ -427,14 +522,16 @@
 
             const match = traineesData.find(t => (n && t.number === n) || (m && t.name.includes(m)));
             if (match) {
-                const target = document.getElementById(`seat-${match.col}-${match.row}`);
+                const target = document.getElementById(`seat-${match.ech}-${match.col}-${match.row}`);
                 if (target) {
                     target.classList.add('highlight-seat');
                     target.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    const echelonName = match.col <= 8 ? "제1제대" : "제2제대";
-                    const displayCol = match.col <= 8 ? match.col : (match.col - 8);
                     banner.className = "p-3 rounded-lg text-xs sm:text-sm text-center font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30";
-                    banner.innerHTML = `[${match.number}번 ${match.name}] 위치: <strong>${echelonName} ${displayCol}열 ${match.row}행</strong>${match.note ? `<br>비고: ${match.note}` : ''}`;
+                    banner.innerHTML = `[${match.number}번 ${match.name}] 위치: <strong>제${match.ech}제대 ${match.col}열 ${match.row}행</strong>${match.note ? `<br>비고: ${match.note}` : ''}`;
+                    banner.classList.remove('hidden');
+                } else {
+                    banner.className = "p-3 rounded-lg text-xs sm:text-sm text-center font-semibold bg-amber-500/20 text-amber-300 border border-amber-500/30";
+                    banner.innerHTML = `[${match.number}번 ${match.name}] 위치: <strong>제${match.ech}제대 ${match.col}열 ${match.row}행</strong> (화면에 표시되지 않는 행입니다)`;
                     banner.classList.remove('hidden');
                 }
             } else {
@@ -452,12 +549,13 @@
         }
 
         function checkAdminPassword() {
-            const pass = prompt("관리자 비밀번호를 입력하세요.");
-            if (pass === "1989") {
-                openAdminModal();
-            } else if (pass !== null) {
-                alert("비밀번호가 일치하지 않습니다.");
-            }
+            openPasswordModal("관리자 비밀번호를 입력하세요.", (pass) => {
+                if (pass === "1989") {
+                    openAdminModal();
+                } else if (pass !== null && pass !== '') {
+                    customAlert("비밀번호가 일치하지 않습니다.");
+                }
+            });
         }
 
         function openAdminModal() {
@@ -489,7 +587,7 @@
                     </summary>
                     <div class='mt-2.5 space-y-2'>
                         <p class='text-[10px] text-slate-400 leading-relaxed'>
-                            엑셀에서 <strong>[제대(1/2), 열(1~8), 행(1~11), 교번, 성명, 비고]</strong> 범위 전체를 복사하여 붙여넣으세요.
+                            엑셀에서 <strong>[제대(1/2), 열(1~8), 행(1~21), 교번, 성명, 비고]</strong> 범위 전체를 복사하여 붙여넣으세요.
                         </p>
                         <textarea id='paste-textarea' rows='3' placeholder='예시:&#10;1&#9;1&#9;1&#9;1&#9;강민우&#9;&#10;2&#9;1&#9;1&#9;111&#9;이도윤&#9;' class='w-full bg-slate-950 border border-slate-700 rounded p-2 text-[10px] font-mono text-slate-200 focus:outline-none focus:border-amber-500 custom-scrollbar'></textarea>
                         <button onclick='applyPastedText()' class='w-full bg-amber-600 hover:bg-amber-500 text-white font-bold py-1.5 rounded text-xs transition'>
@@ -508,7 +606,7 @@
 
                 <div class='max-h-56 overflow-y-auto space-y-1 mb-4 pr-1 custom-scrollbar bg-slate-950/60 p-2 rounded-lg border border-slate-800'>
                     <div class='flex gap-1 text-[10px] text-slate-400 mb-1 px-1 font-semibold'>
-                        <span class='w-12 text-center'>제대</span>
+                        <span class='w-14 text-center'>제대</span>
                         <span class='w-10 text-center'>열</span>
                         <span class='w-10 text-center'>행</span>
                         <span class='w-12 text-center'>교번</span>
@@ -516,24 +614,20 @@
                         <span class='w-16 text-center'>비고</span>
                         <span class='w-6 text-center'>삭제</span>
                     </div>
-                    ${traineesData.map((t, i) => {
-                        const ech = t.col <= 8 ? 1 : 2;
-                        const echCol = t.col <= 8 ? t.col : (t.col - 8);
-                        return `
+                    ${traineesData.map((t, i) => `
                         <div class='flex gap-1 items-center'>
-                            <select class='w-12 bg-slate-800 p-1 text-[10px] rounded text-center text-white border border-slate-700' id='ech-${i}'>
-                                <option value='1' ${ech === 1 ? 'selected' : ''}>1제대</option>
-                                <option value='2' ${ech === 2 ? 'selected' : ''}>2제대</option>
+                            <select class='w-14 bg-slate-800 p-1 text-[10px] rounded text-center text-white border border-slate-700' id='ech-${i}'>
+                                <option value='1' ${parseInt(t.ech) === 1 ? 'selected' : ''}>1제대</option>
+                                <option value='2' ${parseInt(t.ech) === 2 ? 'selected' : ''}>2제대</option>
                             </select>
-                            <input class='w-10 bg-slate-800 p-1 text-[10px] rounded text-center text-white border border-slate-700' value='${echCol}' id='c-${i}' placeholder='열'>
+                            <input class='w-10 bg-slate-800 p-1 text-[10px] rounded text-center text-white border border-slate-700' value='${t.col}' id='c-${i}' placeholder='열'>
                             <input class='w-10 bg-slate-800 p-1 text-[10px] rounded text-center text-white border border-slate-700' value='${t.row}' id='r-${i}' placeholder='행'>
                             <input class='w-12 bg-slate-800 p-1 text-[10px] rounded text-center text-white border border-slate-700' value='${t.number}' id='n-${i}'>
                             <input class='flex-1 bg-slate-800 p-1 text-[10px] rounded text-white border border-slate-700' value='${t.name}' id='m-${i}'>
                             <input class='w-16 bg-slate-800 p-1 text-[10px] rounded text-white border border-slate-700' value='${t.note || ''}' id='o-${i}' placeholder='비고'>
                             <button onclick='del(${i})' class='bg-rose-900/80 hover:bg-rose-800 text-rose-200 px-2 py-0.5 rounded text-[10px]'>X</button>
                         </div>
-                        `;
-                    }).join('')}
+                    `).join('')}
                 </div>
 
                 <div class='flex gap-2'>
@@ -553,9 +647,8 @@
                 const m = document.getElementById('m-' + i);
                 const o = document.getElementById('o-' + i);
                 if (ech && c && r && n && m && o) {
-                    const parsedEch = parseInt(ech.value) || 1;
-                    const parsedCol = parseInt(c.value) || 1;
-                    traineesData[i].col = parsedEch === 1 ? parsedCol : (parsedCol + 8);
+                    traineesData[i].ech = parseInt(ech.value) || 1;
+                    traineesData[i].col = parseInt(c.value) || 1;
                     traineesData[i].row = parseInt(r.value) || 1;
                     traineesData[i].number = n.value.trim();
                     traineesData[i].name = m.value.trim();
@@ -566,7 +659,7 @@
 
         function buildFullHTMLString(dataset) {
             const formattedDataLines = dataset.map(item => 
-                `            { col: ${item.col}, row: ${item.row}, number: "${item.number}", name: "${item.name}", note: "${item.note || ''}" }`
+                `            { ech: ${item.ech}, col: ${item.col}, row: ${item.row}, number: "${item.number}", name: "${item.name}", note: "${item.note || ''}" }`
             ).join(',\n');
 
             let currentDoc = document.documentElement.outerHTML;
@@ -583,7 +676,7 @@
             link.href = URL.createObjectURL(blob);
             link.download = 'index.html';
             link.click();
-            alert("수정사항이 반영된 [index.html] 파일이 다운로드되었습니다.\n\nVercel 또는 GitHub에 덮어쓰기 업로드하시면 영구 적용됩니다.");
+            customAlert("수정사항이 반영된 [index.html] 파일이 다운로드되었습니다.");
         }
 
         function copyUpdatedHTML() {
@@ -595,12 +688,12 @@
             textarea.select();
             document.execCommand('copy');
             document.body.removeChild(textarea);
-            alert("수정된 전체 소스코드가 클립보드에 복사되었습니다.\n\nindex.html 파일에 그대로 붙여넣기 하시면 됩니다.");
+            customAlert("수정된 전체 소스코드가 클립보드에 복사되었습니다.");
         }
 
         function applyPastedText() {
             const rawText = document.getElementById('paste-textarea').value.trim();
-            if (!rawText) return alert("붙여넣을 텍스트를 입력해주세요.");
+            if (!rawText) return customAlert("붙여넣을 텍스트를 입력해주세요.");
 
             const lines = rawText.split(/\r?\n/);
             const startIndex = (lines[0].includes("교번") || lines[0].includes("성명") || lines[0].includes("제대")) ? 1 : 0;
@@ -613,18 +706,24 @@
                 const p = line.split(delimiter).map(x => x.trim());
 
                 if (p.length >= 5) {
-                    const ech = parseInt(p[0]) || 1;
-                    const col = parseInt(p[1]) || 1;
+                    let ech = parseInt(p[0]) || 1;
+                    let col = parseInt(p[1]) || 1;
+                    if (col > 8) { ech = 2; col = col - 8; }
                     parsed.push({
-                        col: ech === 1 ? col : (col + 8),
+                        ech: ech,
+                        col: col,
                         row: parseInt(p[2]) || 1,
                         number: p[3] || "0",
                         name: p[4] || "이름",
                         note: p[5] || ""
                     });
                 } else if (p.length === 4) {
+                    let col = parseInt(p[0]) || 1;
+                    let ech = col > 8 ? 2 : 1;
+                    if (col > 8) col = col - 8;
                     parsed.push({
-                        col: parseInt(p[0]) || 1,
+                        ech: ech,
+                        col: col,
                         row: parseInt(p[1]) || 1,
                         number: p[2] || "0",
                         name: p[3] || "이름",
@@ -638,18 +737,16 @@
                 localStorage.setItem('traineeList', JSON.stringify(traineesData));
                 openAdminModal();
                 renderBoard();
-                alert(`총 ${parsed.length}명의 명단이 반영되었습니다.\n[새로운 index.html 다운로드]를 눌러 배포 파일을 생성하세요.`);
+                customAlert(`총 ${parsed.length}명의 명단이 반영되었습니다.`);
             } else {
-                alert("데이터 형식을 확인해주세요. (제대, 열, 행, 교번, 성명, 비고 순서)");
+                customAlert("데이터 형식을 확인해주세요. (제대, 열, 행, 교번, 성명, 비고 순서)");
             }
         }
 
         function exportCSV() {
             syncFormValues();
             let csv = "\uFEFF제대,열,행,교번,성명,비고\n" + traineesData.map(t => {
-                const ech = t.col <= 8 ? 1 : 2;
-                const col = t.col <= 8 ? t.col : (t.col - 8);
-                return `${ech},${col},${t.row},${t.number},${t.name},${t.note || ''}`;
+                return `${t.ech},${t.col},${t.row},${t.number},${t.name},${t.note || ''}`;
             }).join("\n");
             
             const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
@@ -668,38 +765,50 @@
                         const parts = l.split(',');
                         if (parts.length >= 5) {
                             const [ech, col, row, number, name, note] = parts;
-                            const parsedEch = parseInt(ech) || 1;
-                            const parsedCol = parseInt(col) || 1;
+                            let parsedEch = parseInt(ech) || 1;
+                            let parsedCol = parseInt(col) || 1;
+                            if (parsedCol > 8) { parsedEch = 2; parsedCol = parsedCol - 8; }
                             return {
-                                col: parsedEch === 1 ? parsedCol : (parsedCol + 8),
+                                ech: parsedEch,
+                                col: parsedCol,
                                 row: parseInt(row) || 1,
-                                number: number || "0",
-                                name: name || "신규",
-                                note: note || ''
+                                number: String(number || "0").trim(),
+                                name: String(name || "신규").trim(),
+                                note: String(note || '').trim()
                             };
                         } else {
                             const [col, row, number, name, note] = parts;
-                            return { col: parseInt(col) || 1, row: parseInt(row) || 1, number: number || "0", name: name || "신규", note: note || '' };
+                            let parsedCol = parseInt(col) || 1;
+                            let parsedEch = parsedCol > 8 ? 2 : 1;
+                            if (parsedCol > 8) parsedCol = parsedCol - 8;
+                            return {
+                                ech: parsedEch,
+                                col: parsedCol,
+                                row: parseInt(row) || 1,
+                                number: String(number || "0").trim(),
+                                name: String(name || "신규").trim(),
+                                note: String(note || '').trim()
+                            };
                         }
                     });
                     localStorage.setItem('traineeList', JSON.stringify(traineesData));
                     openAdminModal();
                     renderBoard();
-                    alert("CSV 파일이 적용되었습니다.\n[새로운 index.html 다운로드]를 눌러 배포하세요.");
+                    customAlert("CSV 파일이 적용되었습니다.");
                 } catch(err) {
-                    alert("CSV 파일을 읽는 중 오류가 발생했습니다.");
+                    customAlert("CSV 파일을 읽는 중 오류가 발생했습니다.");
                 }
             };
             reader.readAsText(e.target.files[0], 'euc-kr');
         }
 
         function del(i) { syncFormValues(); traineesData.splice(i, 1); openAdminModal(); renderBoard(); }
-        function add() { syncFormValues(); traineesData.push({ col: 1, row: 1, number: "0", name: "신규", note: "" }); openAdminModal(); renderBoard(); }
+        function add() { syncFormValues(); traineesData.push({ ech: 1, col: 1, row: 1, number: "0", name: "신규", note: "" }); openAdminModal(); renderBoard(); }
         
         function saveLocalOnly() {
             syncFormValues();
             localStorage.setItem('traineeList', JSON.stringify(traineesData));
-            alert("이 기기에 저장되었습니다.\n(※ 모든 사용자에게 배포하려면 '새로운 index.html 다운로드' 후 Vercel에 올려야 합니다.)");
+            customAlert("이 기기에 저장되었습니다.");
             toggleModal('detail-modal');
             renderBoard();
         }
@@ -713,7 +822,7 @@
             dummy.select();
             document.execCommand('copy');
             document.body.removeChild(dummy);
-            alert("웹사이트 주소가 복사되었습니다.");
+            customAlert("웹사이트 주소가 복사되었습니다.");
         }
 
         function openCommanderModal() {
@@ -731,9 +840,9 @@
 
         function openDetailModal(p) {
             toggleModal('detail-modal');
-            const echelonName = p.col <= 8 ? "제1제대" : "제2제대";
-            const displayCol = p.col <= 8 ? p.col : (p.col - 8);
-            const index = traineesData.findIndex(t => t.col === p.col && t.row === p.row);
+            const echelonName = `제${p.ech}제대`;
+            const displayCol = p.col;
+            const index = traineesData.findIndex(t => parseInt(t.ech) === parseInt(p.ech) && parseInt(t.col) === parseInt(p.col) && parseInt(t.row) === parseInt(p.row));
 
             renderReadOnlyDetail(p, echelonName, displayCol, index);
         }
@@ -760,18 +869,19 @@
         }
 
         function requestQuickEditAuth(index) {
-            const pass = prompt("후보생 정보를 수정하려면 관리자 비밀번호를 입력하세요.");
-            if (pass === "1989") {
-                renderEditableDetail(index);
-            } else if (pass !== null) {
-                alert("비밀번호가 일치하지 않습니다.");
-            }
+            openPasswordModal("후보생 정보를 수정하려면 비밀번호를 입력하세요.", (pass) => {
+                if (pass === "1989") {
+                    renderEditableDetail(index);
+                } else if (pass !== null && pass !== '') {
+                    customAlert("비밀번호가 일치하지 않습니다.");
+                }
+            });
         }
 
         function renderEditableDetail(index) {
             const p = traineesData[index];
-            const echelonName = p.col <= 8 ? "제1제대" : "제2제대";
-            const displayCol = p.col <= 8 ? p.col : (p.col - 8);
+            const echelonName = `제${p.ech}제대`;
+            const displayCol = p.col;
 
             document.getElementById('modal-content').innerHTML = `
                 <div class="bg-slate-800 p-4 rounded-xl space-y-3 border border-slate-700">
@@ -808,8 +918,7 @@
             const newNote = document.getElementById('quick-edit-note').value.trim();
 
             if (!newName) {
-                alert("성명을 입력해 주세요.");
-                return;
+                return customAlert("성명을 입력해 주세요.");
             }
 
             traineesData[idx].number = newNum;
@@ -817,7 +926,7 @@
             traineesData[idx].note = newNote;
 
             localStorage.setItem('traineeList', JSON.stringify(traineesData));
-            alert(`[${newName}] 후보생 정보가 수정되었습니다.`);
+            customAlert(`[${newName}] 후보생 정보가 수정되었습니다.`);
             toggleModal('detail-modal');
             renderBoard();
         }
@@ -826,3 +935,4 @@
     </script>
 </body>
 </html>
+```
