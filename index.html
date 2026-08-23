@@ -4,10 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>특부후 264기 임관식 배치도</title>
+    <!-- 메타 태그 -->
     <meta property="og:type" content="website">
     <meta property="og:title" content="특부후 264기 임관식 좌석 배치도">
     <meta property="og:description" content="후보생의 교번 또는 성명을 입력하여 좌석 위치를 정확히 확인하세요.">
+    <meta property="og:image" content="https://264-wine.vercel.app/unnamed.jpg">
+    <meta property="og:locale" content="ko_KR">
+
     <script src="https://cdn.tailwindcss.com"></script>
+
     <style>
         @keyframes pulse-glow {
             0%, 100% { transform: scale(1); box-shadow: 0 0 15px rgba(245, 158, 11, 0.85); }
@@ -31,12 +36,22 @@
             background-color: #064e3b !important;
             transform: scale(1.06);
         }
-        .dragging-source { opacity: 0.35; }
+        .dragging-source {
+            opacity: 0.35;
+        }
+        /* 스마트폰 터치 드래그 시 손가락을 따라다니는 클론 */
         .mobile-drag-clone {
-            position: fixed; z-index: 99999; pointer-events: none; opacity: 0.92;
-            transform: scale(1.08); box-shadow: 0 12px 24px rgba(0,0,0,0.6);
-            background: #1e293b; border: 2px solid #38bdf8; border-radius: 6px;
-            text-align: center; padding: 4px;
+            position: fixed;
+            z-index: 99999;
+            pointer-events: none;
+            opacity: 0.92;
+            transform: scale(1.08);
+            box-shadow: 0 12px 24px rgba(0,0,0,0.6);
+            background: #1e293b;
+            border: 2px solid #38bdf8;
+            border-radius: 6px;
+            text-align: center;
+            padding: 4px;
         }
         .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: #0f172a; }
@@ -47,57 +62,86 @@
 
     <div class="w-full max-w-6xl bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-4 sm:p-6 flex flex-col gap-5">
         
+        <!-- 상단 헤더 -->
         <header class="text-center space-y-3 relative border-b border-slate-800 pb-5">
-            <h1 class="text-2xl sm:text-3xl font-extrabold text-emerald-400 tracking-tight">특부후 264기 임관식 배치도</h1>
-            <p class="text-xs sm:text-sm text-slate-400">후보생의 교번 또는 성명을 입력하여 좌석 위치를 정확히 확인하세요.</p>
+            <h1 class="text-2xl sm:text-3xl font-extrabold text-emerald-400 tracking-tight">
+                특부후 264기 임관식 배치도
+            </h1>
+            <p class="text-xs sm:text-sm text-slate-400">
+                후보생의 교번 또는 성명을 입력하여 좌석 위치를 정확히 확인하세요.
+            </p>
+            
             <div class="flex flex-wrap justify-center items-center gap-2 pt-1">
-                <button onclick="toggleModal('notice-modal')" class="bg-amber-500/20 text-amber-300 text-xs px-3 py-1.5 rounded-full border border-amber-500/40">이용 안내</button>
-                <button onclick="requestDragModeToggle()" id="drag-toggle-btn" class="bg-sky-500/20 text-sky-300 text-xs px-3 py-1.5 rounded-full border border-sky-500/40">🖐️ 자리 이동 모드: OFF</button>
-                <button onclick="copyCurrentUrl()" class="bg-yellow-500/20 text-yellow-300 text-xs px-3 py-1.5 rounded-full border border-yellow-500/40">링크 복사</button>
+                <button onclick="toggleModal('notice-modal')" class="bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 text-xs px-3 py-1.5 rounded-full border border-amber-500/40 transition font-medium">
+                    이용 안내
+                </button>
+                <button onclick="requestDragModeToggle()" id="drag-toggle-btn" class="bg-sky-500/20 hover:bg-sky-500/30 text-sky-300 text-xs px-3 py-1.5 rounded-full border border-sky-500/40 transition font-medium">
+                    🖐️ 자리 이동 모드: OFF
+                </button>
+                <button onclick="copyCurrentUrl()" class="bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-300 text-xs px-3 py-1.5 rounded-full border border-yellow-500/40 transition font-medium">
+                    링크 복사
+                </button>
             </div>
         </header>
 
+        <!-- 검색 영역 -->
         <section class="bg-slate-800/80 p-4 rounded-xl border border-slate-700/60 shadow-inner">
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                    <label class="block text-xs font-semibold text-slate-300 mb-1">교번</label>
-                    <input type="text" id="search-number" placeholder="예: 76" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200">
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">교번 (번호만 입력)</label>
+                    <input type="text" id="search-number" placeholder="예: 76" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-emerald-500">
                 </div>
                 <div>
                     <label class="block text-xs font-semibold text-slate-300 mb-1">성명</label>
-                    <input type="text" id="search-name" placeholder="예: 박철완" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200">
+                    <input type="text" id="search-name" placeholder="예: 박철완" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-emerald-500">
                 </div>
             </div>
+
             <div class="mt-4 flex gap-2">
-                <button onclick="executeSearch()" class="flex-1 bg-emerald-600 text-white font-bold py-2.5 rounded-lg text-sm">조회하기</button>
-                <button onclick="resetSearch()" class="bg-slate-700 text-slate-300 font-medium px-4 py-2.5 rounded-lg text-sm">초기화</button>
+                <button onclick="executeSearch()" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2.5 rounded-lg text-sm transition flex items-center justify-center gap-2 shadow-lg shadow-emerald-900/30">
+                    조회하기
+                </button>
+                <button onclick="resetSearch()" class="bg-slate-700 hover:bg-slate-600 text-slate-300 font-medium px-4 py-2.5 rounded-lg text-sm transition">
+                    초기화
+                </button>
             </div>
         </section>
 
+        <!-- 결과 알림 -->
         <div id="search-result-banner" class="hidden p-3 rounded-lg text-sm text-center font-semibold"></div>
 
+        <!-- 단상 및 지휘자 (상단) -->
         <section class="space-y-3 text-center">
-            <div class="bg-slate-100 text-slate-900 font-extrabold text-base sm:text-lg py-2 rounded-xl">단 상 ( 사 열 대 )</div>
+            <div class="bg-slate-100 text-slate-900 font-extrabold text-base sm:text-lg py-2 rounded-xl shadow-md tracking-wider">
+                단 상 ( 사 열 대 )
+            </div>
+
             <div class="max-w-xs mx-auto text-xs">
-                <div id="commander-card" class="bg-slate-800 border border-emerald-500/60 p-2.5 rounded-lg cursor-pointer" onclick="openCommanderModal()">
+                <div id="commander-card" class="bg-slate-800 border border-emerald-500/60 p-2.5 rounded-lg shadow-md transition cursor-pointer hover:bg-slate-750" onclick="openCommanderModal()">
                     <span class="text-emerald-400 font-bold block mb-0.5">지휘자</span>
                     <span class="text-slate-100 font-bold text-sm">76번 박철완</span>
                 </div>
             </div>
         </section>
 
+        <!-- 수평 통합 좌석 배치도 -->
         <section class="border border-slate-800 bg-slate-950 p-3 sm:p-4 rounded-xl space-y-3">
-            <div class="flex justify-between items-center text-[11px] text-slate-400">
-                <span id="drag-status-msg" class="text-sky-300 font-medium hidden">🖐️ 모드 활성: 스마트폰 드래그 또는 터치로 자리 교환</span>
+            <div class="flex flex-wrap justify-between items-center text-[11px] text-slate-400 gap-1">
+                <span id="drag-status-msg" class="text-sky-300 font-medium hidden">
+                    🖐️ 자리 이동 모드 활성: 스마트폰 손가락 드래그 또는 터치 선택으로 자리를 바꿀 수 있습니다.
+                </span>
                 <span class="text-slate-400">좌우로 스크롤하여 전체 대열을 확인하세요.</span>
-                <span class="ml-auto">총 164명</span>
+                <span class="ml-auto">총 164명 (지휘자 1명 + 대열 163명)</span>
             </div>
 
-            <div class="overflow-x-auto custom-scrollbar pb-3">
+            <!-- 단일 좌우 스크롤 컨테이너 -->
+            <div class="overflow-x-auto custom-scrollbar pb-3" id="scrollable-board">
                 <div class="inline-flex gap-8 min-w-max p-1">
+                    <!-- 제1제대 (1~8열 x 11행) -->
                     <div class="space-y-2">
                         <div class="text-center font-bold text-xs text-purple-300 border-b border-slate-800 pb-1 flex justify-between items-center px-1">
                             <span>제1제대 (1~8열)</span>
+                            <span class="text-[10px] text-purple-400 font-normal">82명</span>
                         </div>
                         <div class="grid grid-cols-[30px_repeat(8,1fr)] gap-1 text-center text-[10px] font-semibold text-purple-300" id="echelon1-headers"></div>
                         <div id="echelon1-grid" class="grid grid-cols-[30px_repeat(8,1fr)] gap-1"></div>
@@ -105,9 +149,11 @@
 
                     <div class="w-px bg-slate-800 self-stretch my-2"></div>
 
+                    <!-- 제2제대 (1~8열 x 11행) -->
                     <div class="space-y-2">
                         <div class="text-center font-bold text-xs text-emerald-300 border-b border-slate-800 pb-1 flex justify-between items-center px-1">
                             <span>제2제대 (1~8열)</span>
+                            <span class="text-[10px] text-emerald-400 font-normal">81명</span>
                         </div>
                         <div class="grid grid-cols-[30px_repeat(8,1fr)] gap-1 text-center text-[10px] font-semibold text-emerald-300" id="echelon2-headers"></div>
                         <div id="echelon2-grid" class="grid grid-cols-[30px_repeat(8,1fr)] gap-1"></div>
@@ -116,50 +162,65 @@
             </div>
         </section>
 
+        <!-- 출입문 방향 (하단) -->
         <section class="space-y-3 text-center">
-            <div class="bg-slate-100 text-slate-900 font-extrabold text-base sm:text-lg py-2 rounded-xl">출 입 문 방 향</div>
+            <div class="bg-slate-100 text-slate-900 font-extrabold text-base sm:text-lg py-2 rounded-xl shadow-md tracking-wider">
+                출 입 문 방 향
+            </div>
         </section>
 
+        <!-- 관리자 설정 버튼 -->
         <div class="text-center">
-            <button onclick="checkAdminPassword()" class="text-slate-600 text-xs hover:text-slate-400 underline">⚙️ 관리자 설정 (데이터 관리 및 배포)</button>
+            <button onclick="checkAdminPassword()" class="text-slate-600 text-xs hover:text-slate-400 underline">
+                ⚙️ 관리자 설정 (명단 수정 / 소스코드 다운로드 / 텍스트 일괄 붙여넣기)
+            </button>
         </div>
     </div>
 
     <!-- 숨겨진 파일 입력창 -->
     <input type="file" id="csvFileInput" class="hidden" accept=".csv" onchange="importCSV(event)">
 
-    <!-- 모달 -->
+    <!-- 상세 및 관리자 모달 -->
     <div id="detail-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
         <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-2xl w-full p-5 shadow-2xl overflow-hidden" id="modal-content"></div>
     </div>
-    
+
+    <!-- 안내 모달 -->
     <div id="notice-modal" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
         <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-sm w-full p-5 space-y-4 shadow-2xl text-slate-300 text-xs sm:text-sm">
-            <h3 class="text-base font-bold text-amber-400 border-b border-slate-800 pb-2">이용 안내</h3>
-            <p>1. 교번이나 성명 입력 후 [조회하기]를 누르세요.</p>
-            <p>2. 새로운 검색 시 [초기화]를 눌러주세요.</p>
-            <p>3. 좌우 스크롤로 양쪽 제대를 모두 확인할 수 있습니다.</p>
-            <button onclick="toggleModal('notice-modal')" class="w-full bg-amber-600 text-white py-2 rounded-lg text-xs">확인</button>
+            <h3 class="text-base font-bold text-amber-400 border-b border-slate-800 pb-2 flex justify-between items-center">
+                <span>이용 안내</span>
+                <button onclick="toggleModal('notice-modal')" class="text-slate-400 hover:text-white text-xl">&times;</button>
+            </h3>
+            <div class="space-y-2.5 leading-relaxed">
+                <p>1. 교번(예: 76) 또는 성명(예: 박철완)을 입력하시고 <strong>[조회하기]</strong> 버튼을 누르시면 좌석 위치가 깜빡이며 표시됩니다.</p>
+                <p>2. 위쪽은 단상(사열대) 방향이며 아래쪽은 출입문 방향입니다.</p>
+                <p>3. 화면을 <strong>좌우로 스크롤</strong>하여 전체 대열을 연속해서 확인하실 수 있습니다.</p>
+                <p>4. 좌석 카드를 클릭하면 상세 정보 확인 및 정보 수정을 진행할 수 있습니다 (비밀번호 인증 필요).</p>
+            </div>
+            <button onclick="toggleModal('notice-modal')" class="w-full bg-amber-600 hover:bg-amber-500 text-white font-semibold py-2 rounded-lg text-xs transition">
+                확인
+            </button>
         </div>
     </div>
-    
+
     <script id="embeddedDataScript">
-        // [1제대 데이터 묶음] (1~8열 독립)
+        // [제1제대 원본 데이터 묶음] (1~8열 x 11행, 총 82명)
         const echelon1Data = [
             { col: 1, row: 1, number: "1", name: "강민우", note: "" }, { col: 2, row: 1, number: "3", name: "고경민", note: "" }, { col: 3, row: 1, number: "5", name: "곽민혁", note: "" }, { col: 4, row: 1, number: "7", name: "구민제", note: "" }, { col: 5, row: 1, number: "8", name: "구승범", note: "" }, { col: 6, row: 1, number: "9", name: "구휘성", note: "" }, { col: 7, row: 1, number: "10", name: "권광림", note: "" }, { col: 8, row: 1, number: "11", name: "권선우", note: "" },
             { col: 1, row: 2, number: "12", name: "권성찬", note: "" }, { col: 2, row: 2, number: "13", name: "김강휘", note: "" }, { col: 3, row: 2, number: "14", name: "김건우", note: "" }, { col: 4, row: 2, number: "15", name: "김경모", note: "" }, { col: 5, row: 2, number: "18", name: "김대현", note: "" }, { col: 6, row: 2, number: "19", name: "김덕현", note: "" }, { col: 7, row: 2, number: "20", name: "김도현", note: "" }, { col: 8, row: 2, number: "21", name: "김동현", note: "" },
             { col: 1, row: 3, number: "22", name: "김동형", note: "" }, { col: 2, row: 3, number: "26", name: "김민준", note: "" }, { col: 3, row: 3, number: "28", name: "김병수", note: "" }, { col: 4, row: 3, number: "29", name: "김승하", note: "" }, { col: 5, row: 3, number: "33", name: "김어진", note: "" }, { col: 6, row: 3, number: "34", name: "김영광", note: "" }, { col: 7, row: 3, number: "36", name: "김원철", note: "" }, { col: 8, row: 3, number: "38", name: "김윤찬", note: "" },
             { col: 1, row: 4, number: "39", name: "김인수", note: "" }, { col: 2, row: 4, number: "40", name: "김종빈", note: "" }, { col: 3, row: 4, number: "41", name: "김준권", note: "" }, { col: 4, row: 4, number: "43", name: "김준혁", note: "" }, { col: 5, row: 4, number: "44", name: "김진우", note: "" }, { col: 6, row: 4, number: "46", name: "김태규", note: "" }, { col: 7, row: 4, number: "47", name: "김태연", note: "" }, { col: 8, row: 4, number: "48", name: "김하진", note: "" },
             { col: 1, row: 5, number: "49", name: "김현민", note: "" }, { col: 2, row: 5, number: "51", name: "김현우", note: "" }, { col: 3, row: 5, number: "53", name: "김현준", note: "" }, { col: 4, row: 5, number: "54", name: "김현준", note: "" }, { col: 5, row: 5, number: "55", name: "김현중", note: "" }, { col: 6, row: 5, number: "56", name: "나겸우", note: "" }, { col: 7, row: 5, number: "57", name: "나시후", note: "" }, { col: 8, row: 5, number: "58", name: "류호식", note: "" },
-            { col: 1, row: 6, number: "59", name: "박건욱", note: "" }, { col: 2, row: 6, number: "60", name: "박심윤", note: "" }, { col: 3, row: 6, number: "61", name: "박상권", note: "" }, { col: 4, row: 6, number: "63", name: "박승태", note: "" }, { col: 5, row: 6, number: "64", name: "박시환", note: "" }, { col: 6, row: 6, number: "65", name: "박예찬", note: "" }, { col: 7, row: 6, number: "67", name: "박제연", note: "" }, { col: 8, row: 6, number: "68", name: "박주성", note: "" },
-            { col: 1, row: 7, number: "69", name: "박주형", note: "" }, { col: 2, row: 7, number: "70", name: "박준성", note: "" }, { col: 3, row: 7, number: "71", name: "박중정", note: "" }, { col: 4, row: 7, number: "73", name: "박진응", note: "" }, { col: 5, row: 7, number: "75", name: "박찬민", note: "" }, { col: 6, row: 7, number: "77", name: "박태수", note: "" }, { col: 7, row: 7, number: "78", name: "박현준", note: "" }, { col: 8, row: 7, number: "80", name: "백승곤", note: "" },
-            { col: 1, row: 8, number: "81", name: "백승규", note: "" }, { col: 2, row: 8, number: "83", name: "서재경", note: "" }, { col: 3, row: 8, number: "84", name: "서창빈", note: "" }, { col: 4, row: 8, number: "85", name: "성유찬", note: "" }, { col: 5, row: 8, number: "86", name: "소현섭", note: "" }, { col: 6, row: 8, number: "87", name: "손호민", note: "" }, { col: 7, row: 8, number: "88", name: "송수힌", note: "" }, { col: 8, row: 8, number: "89", name: "신연성", note: "" },
-            { col: 1, row: 9, number: "90", name: "신혁수", note: "" }, { col: 2, row: 9, number: "92", name: "안세민", note: "" }, { col: 3, row: 9, number: "93", name: "안창하", note: "" }, { col: 4, row: 9, number: "94", name: "양인권", note: "" }, { col: 5, row: 9, number: "97", name: "오세힌", note: "" }, { col: 6, row: 9, number: "98", name: "오태환", note: "" }, { col: 7, row: 9, number: "99", name: "오형석", note: "" }, { col: 8, row: 9, number: "100", name: "우림", note: "" },
-            { col: 1, row: 10, number: "101", name: "우성환", note: "" }, { col: 2, row: 10, number: "102", name: "유범진", note: "" }, { col: 3, row: 10, number: "104", name: "윤시진", note: "" }, { col: 4, row: 10, number: "105", name: "윤여찬", note: "" }, { col: 5, row: 10, number: "106", name: "윤정현", note: "" }, { col: 6, row: 10, number: "107", name: "윤지원", note: "" }, { col: 7, row: 10, number: "108", name: "윤현빈", note: "" }, { col: 8, row: 10, number: "109", name: "이강교", note: "" },
-            { col: 1, row: 11, number: "110", name: "이노영", note: "" }
+            { col: 1, row: 6, number: "59", name: "박건욱", note: "" }, { col: 2, row: 6, number: "60", name: "박심윤", note: "" }, { col: 3, row: 6, number: "61", name: "박상권", note: "" }, { col: 4, row: 6, number: "63", name: "박승태", note: "" }, { col: 5, row: 6, number: "64", name: "박시환", note: "" }, { col: 6, row: 6, number: "65", name: "박예찬", note: "" }, { col: 7, row: 6, number: "66", name: "박정수", note: "" }, { col: 8, row: 6, number: "67", name: "박제연", note: "" },
+            { col: 1, row: 7, number: "68", name: "박주성", note: "" }, { col: 2, row: 7, number: "69", name: "박주형", note: "" }, { col: 3, row: 7, number: "70", name: "박준성", note: "" }, { col: 4, row: 7, number: "71", name: "박중정", note: "" }, { col: 5, row: 7, number: "73", name: "박진응", note: "" }, { col: 6, row: 7, number: "75", name: "박찬민", note: "" }, { col: 7, row: 7, number: "77", name: "박태수", note: "" }, { col: 8, row: 7, number: "78", name: "박현준", note: "" },
+            { col: 1, row: 8, number: "80", name: "백승곤", note: "" }, { col: 2, row: 8, number: "81", name: "백승규", note: "" }, { col: 3, row: 8, number: "83", name: "서재경", note: "" }, { col: 4, row: 8, number: "84", name: "서창빈", note: "" }, { col: 5, row: 8, number: "85", name: "성유찬", note: "" }, { col: 6, row: 8, number: "86", name: "소현섭", note: "" }, { col: 7, row: 8, number: "87", name: "손호민", note: "" }, { col: 8, row: 8, number: "88", name: "송수힌", note: "" },
+            { col: 1, row: 9, number: "89", name: "신연성", note: "" }, { col: 2, row: 9, number: "90", name: "신혁수", note: "" }, { col: 3, row: 9, number: "92", name: "안세민", note: "" }, { col: 4, row: 9, number: "93", name: "안창하", note: "" }, { col: 5, row: 9, number: "94", name: "양인권", note: "" }, { col: 6, row: 9, number: "97", name: "오세힌", note: "" }, { col: 7, row: 9, number: "98", name: "오태환", note: "" }, { col: 8, row: 9, number: "99", name: "오형석", note: "" },
+            { col: 1, row: 10, number: "100", name: "우림", note: "" }, { col: 2, row: 10, number: "101", name: "우성환", note: "" }, { col: 3, row: 10, number: "102", name: "유범진", note: "" }, { col: 4, row: 10, number: "104", name: "윤시진", note: "" }, { col: 5, row: 10, number: "105", name: "윤여찬", note: "" }, { col: 6, row: 10, number: "106", name: "윤정현", note: "" }, { col: 7, row: 10, number: "107", name: "윤지원", note: "" }, { col: 8, row: 10, number: "108", name: "윤현빈", note: "" },
+            { col: 1, row: 11, number: "109", name: "이강교", note: "" }, { col: 2, row: 11, number: "110", name: "이노영", note: "" }
         ];
 
-        // [2제대 데이터 묶음] (1~8열 독립)
+        // [제2제대 원본 데이터 묶음] (1~8열 x 11행, 총 81명)
         const echelon2Data = [
             { col: 1, row: 1, number: "111", name: "이도윤", note: "" }, { col: 2, row: 1, number: "112", name: "이범수", note: "" }, { col: 3, row: 1, number: "113", name: "이성민", note: "" }, { col: 4, row: 1, number: "114", name: "이승민", note: "" }, { col: 5, row: 1, number: "115", name: "이승재", note: "" }, { col: 6, row: 1, number: "116", name: "이승찬", note: "" }, { col: 7, row: 1, number: "117", name: "이승현", note: "" }, { col: 8, row: 1, number: "118", name: "이연우", note: "" },
             { col: 1, row: 2, number: "119", name: "이유승", note: "" }, { col: 2, row: 2, number: "120", name: "이윤호", note: "" }, { col: 3, row: 2, number: "121", name: "이재훈", note: "" }, { col: 4, row: 2, number: "122", name: "이정민", note: "" }, { col: 5, row: 2, number: "123", name: "이정수", note: "" }, { col: 6, row: 2, number: "124", name: "이종환", note: "" }, { col: 7, row: 2, number: "125", name: "이준성", note: "" }, { col: 8, row: 2, number: "127", name: "이지원", note: "" },
@@ -179,37 +240,45 @@
         const ADMIN_PW = "1989";
         const TOTAL_ROWS = 11;
         
-        // 1, 2제대를 독립적으로 관리하는 배열로 통합 (echelon 속성 추가)
+        // 데이터 구조: 제1제대와 제2제대를 통합 관리하되, 각각 ech:1, ech:2 및 col:1~8 속성 포함
         let traineesData = JSON.parse(localStorage.getItem('traineeList_264')) || [
-            ...echelon1Data.map(t => ({ ...t, echelon: 1 })),
-            ...echelon2Data.map(t => ({ ...t, echelon: 2 }))
+            ...echelon1Data.map(t => ({ ech: 1, ...t })),
+            ...echelon2Data.map(t => ({ ech: 2, ...t }))
         ];
 
         let isDragMode = false;
         let selectedSeatForSwap = null;
         let draggedSeatSource = null;
-        
+
+        // 모바일 터치 드래그 상태
         let mobileTouchSrc = null;
         let mobileClone = null;
         let mobileDropTarget = null;
 
         function requestDragModeToggle() {
             if (!isDragMode) {
-                if (prompt("관리자 비밀번호:") === ADMIN_PW) setDragMode(true);
-                else alert("비밀번호 불일치");
-            } else setDragMode(false);
+                const pass = prompt("자리 이동 모드를 활성화하려면 관리자 비밀번호를 입력하세요:");
+                if (pass === ADMIN_PW) {
+                    setDragMode(true);
+                } else if (pass !== null) {
+                    alert("비밀번호가 일치하지 않습니다.");
+                }
+            } else {
+                setDragMode(false);
+            }
         }
 
         function setDragMode(enable) {
-            isDragMode = enable; selectedSeatForSwap = null;
+            isDragMode = enable;
+            selectedSeatForSwap = null;
             const btn = document.getElementById('drag-toggle-btn');
             const msg = document.getElementById('drag-status-msg');
-            if (enable) {
-                btn.className = "bg-sky-500 text-white font-bold text-xs px-3 py-1.5 rounded-full animate-pulse";
+            if (isDragMode) {
+                btn.className = "bg-sky-500 text-white font-bold text-xs px-3 py-1.5 rounded-full border border-sky-400 transition shadow-lg shadow-sky-900/40 animate-pulse";
                 btn.innerText = "🖐️ 자리 이동 모드: ON (터치/드래그)";
                 msg.classList.remove('hidden');
             } else {
-                btn.className = "bg-sky-500/20 text-sky-300 text-xs px-3 py-1.5 rounded-full";
+                btn.className = "bg-sky-500/20 hover:bg-sky-500/30 text-sky-300 text-xs px-3 py-1.5 rounded-full border border-sky-500/40 transition font-medium";
                 btn.innerText = "🖐️ 자리 이동 모드: OFF";
                 msg.classList.add('hidden');
             }
@@ -224,9 +293,12 @@
         function renderEchelon(echelonNum, gridId, headerId) {
             const gridElem = document.getElementById(gridId);
             const headerElem = document.getElementById(headerId);
-            gridElem.innerHTML = ''; headerElem.innerHTML = '<div></div>';
+            gridElem.innerHTML = '';
             
-            for (let c = 1; c <= 8; c++) headerElem.innerHTML += `<div>${c}열</div>`;
+            headerElem.innerHTML = '<div></div>';
+            for (let c = 1; c <= 8; c++) {
+                headerElem.innerHTML += `<div>${c}열</div>`;
+            }
 
             for (let r = 1; r <= TOTAL_ROWS; r++) {
                 const rowLabel = document.createElement('div');
@@ -235,212 +307,611 @@
                 gridElem.appendChild(rowLabel);
 
                 for (let c = 1; c <= 8; c++) {
-                    const person = traineesData.find(t => t.echelon === echelonNum && t.col === c && t.row === r);
+                    const person = traineesData.find(t => t.ech === echelonNum && t.col === c && t.row === r);
                     const seatBtn = document.createElement('button');
                     const echelonBg = (echelonNum === 1) ? 'bg-purple-950/60' : 'bg-emerald-950/60';
                     
-                    seatBtn.dataset.echelon = echelonNum;
+                    seatBtn.dataset.ech = echelonNum;
                     seatBtn.dataset.col = c;
                     seatBtn.dataset.row = r;
                     seatBtn.id = `seat-${echelonNum}-${c}-${r}`;
 
                     if (person) {
-                        const isSel = selectedSeatForSwap && selectedSeatForSwap.echelon === echelonNum && selectedSeatForSwap.col === c && selectedSeatForSwap.row === r;
-                        seatBtn.className = `p-1 rounded border text-center min-h-[38px] transition ${isSel ? 'selected-swap' : echelonBg} border-slate-700`;
-                        seatBtn.innerHTML = `<span class="block text-[8px] text-slate-400 font-mono">${person.number}</span><span class="font-bold text-slate-100 text-[10px]">${person.name}</span>`;
+                        const isSelected = selectedSeatForSwap && selectedSeatForSwap.ech === echelonNum && selectedSeatForSwap.col === c && selectedSeatForSwap.row === r;
+                        seatBtn.className = `p-1 rounded border text-center text-[10px] min-h-[38px] transition ${isSelected ? 'selected-swap' : echelonBg} border-slate-700 hover:border-emerald-500 flex flex-col items-center justify-center`;
+                        seatBtn.innerHTML = `<span class="block text-[8px] text-slate-400 font-mono">${person.number}</span><span class="font-bold text-slate-100">${person.name}</span>`;
+                        
                         if (isDragMode) {
                             seatBtn.draggable = true;
                             seatBtn.ondragstart = (e) => handleDesktopDragStart(e, echelonNum, c, r);
                             seatBtn.ondragover = (e) => handleDesktopDragOver(e, seatBtn);
                             seatBtn.ondragleave = () => seatBtn.classList.remove('drag-over');
                             seatBtn.ondrop = (e) => handleDesktopDrop(e, echelonNum, c, r, seatBtn);
+                            
                             bindMobileTouch(seatBtn, echelonNum, c, r);
+                        } else {
+                            seatBtn.draggable = false;
                         }
-                        seatBtn.onclick = () => isDragMode ? handleSeatClickForSwap(echelonNum, c, r) : openDetailModal(person);
+
+                        seatBtn.onclick = () => {
+                            if (isDragMode) {
+                                handleSeatClickForSwap(echelonNum, c, r);
+                            } else {
+                                openDetailModal(person);
+                            }
+                        };
                     } else {
+                        // 공석
                         seatBtn.className = "bg-slate-900/40 border border-slate-800/80 rounded min-h-[38px]";
+                        
                         if (isDragMode) {
                             seatBtn.ondragover = (e) => handleDesktopDragOver(e, seatBtn);
                             seatBtn.ondragleave = () => seatBtn.classList.remove('drag-over');
                             seatBtn.ondrop = (e) => handleDesktopDrop(e, echelonNum, c, r, seatBtn);
                             bindMobileTouch(seatBtn, echelonNum, c, r);
                         }
-                        seatBtn.onclick = () => isDragMode && selectedSeatForSwap ? handleSeatClickForSwap(echelonNum, c, r) : null;
+                        
+                        seatBtn.onclick = () => {
+                            if (isDragMode && selectedSeatForSwap) {
+                                handleSeatClickForSwap(echelonNum, c, r);
+                            }
+                        };
                     }
                     gridElem.appendChild(seatBtn);
                 }
             }
         }
 
-        // --- 터치 및 드래그 로직 ---
+        // 스마트폰 터치 드래그 앤 드롭
         function bindMobileTouch(elem, ech, col, row) {
             elem.addEventListener("touchstart", function (e) {
                 if (!isDragMode) return;
-                const person = traineesData.find(t => t.echelon === ech && t.col === col && t.row === row);
+                const person = traineesData.find(t => t.ech === ech && t.col === col && t.row === row);
                 if (!person && !selectedSeatForSwap) return;
+
                 mobileTouchSrc = { ech, col, row, element: this };
                 const touch = e.touches[0];
+
                 mobileClone = this.cloneNode(true);
                 mobileClone.className = "mobile-drag-clone";
-                mobileClone.style.width = this.offsetWidth + "px"; mobileClone.style.height = this.offsetHeight + "px";
-                mobileClone.style.left = (touch.clientX - this.offsetWidth / 2) + "px"; mobileClone.style.top = (touch.clientY - this.offsetHeight / 2) + "px";
+                mobileClone.style.width = this.offsetWidth + "px";
+                mobileClone.style.height = this.offsetHeight + "px";
+                mobileClone.style.left = (touch.clientX - this.offsetWidth / 2) + "px";
+                mobileClone.style.top = (touch.clientY - this.offsetHeight / 2) + "px";
                 document.body.appendChild(mobileClone);
+
                 this.classList.add("dragging-source");
             }, { passive: true });
 
             elem.addEventListener("touchmove", function (e) {
                 if (!isDragMode || !mobileTouchSrc || !mobileClone) return;
                 const touch = e.touches[0];
-                mobileClone.style.left = (touch.clientX - mobileClone.offsetWidth / 2) + "px"; mobileClone.style.top = (touch.clientY - mobileClone.offsetHeight / 2) + "px";
+
+                mobileClone.style.left = (touch.clientX - mobileClone.offsetWidth / 2) + "px";
+                mobileClone.style.top = (touch.clientY - mobileClone.offsetHeight / 2) + "px";
+
                 const underElem = document.elementFromPoint(touch.clientX, touch.clientY);
-                const targetBtn = underElem ? underElem.closest("button[data-echelon]") : null;
+                const targetBtn = underElem ? underElem.closest("button[data-ech]") : null;
+
                 document.querySelectorAll(".drag-over").forEach(el => el.classList.remove("drag-over"));
-                if (targetBtn && targetBtn !== mobileTouchSrc.element) { targetBtn.classList.add("drag-over"); mobileDropTarget = targetBtn; }
-                else mobileDropTarget = null;
+                if (targetBtn && targetBtn !== mobileTouchSrc.element) {
+                    targetBtn.classList.add("drag-over");
+                    mobileDropTarget = targetBtn;
+                } else {
+                    mobileDropTarget = null;
+                }
+
                 if (e.cancelable) e.preventDefault();
             }, { passive: false });
 
             elem.addEventListener("touchend", function () {
                 if (!isDragMode || !mobileTouchSrc) return;
-                if (mobileClone) { mobileClone.remove(); mobileClone = null; }
-                if (mobileTouchSrc.element) mobileTouchSrc.element.classList.remove("dragging-source");
+
+                if (mobileClone) {
+                    mobileClone.remove();
+                    mobileClone = null;
+                }
+                if (mobileTouchSrc.element) {
+                    mobileTouchSrc.element.classList.remove("dragging-source");
+                }
                 document.querySelectorAll(".drag-over").forEach(el => el.classList.remove("drag-over"));
+
                 if (mobileDropTarget) {
-                    const tEch = parseInt(mobileDropTarget.dataset.echelon), tCol = parseInt(mobileDropTarget.dataset.col), tRow = parseInt(mobileDropTarget.dataset.row);
-                    if (tEch && tCol && tRow && (mobileTouchSrc.ech !== tEch || mobileTouchSrc.col !== tCol || mobileTouchSrc.row !== tRow)) {
-                        swapOrMoveSeat(mobileTouchSrc.ech, mobileTouchSrc.col, mobileTouchSrc.row, tEch, tCol, tRow);
+                    const tarEch = parseInt(mobileDropTarget.dataset.ech);
+                    const tarCol = parseInt(mobileDropTarget.dataset.col);
+                    const tarRow = parseInt(mobileDropTarget.dataset.row);
+                    if (tarEch && tarCol && tarRow && (mobileTouchSrc.ech !== tarEch || mobileTouchSrc.col !== tarCol || mobileTouchSrc.row !== tarRow)) {
+                        swapOrMoveSeat(mobileTouchSrc.ech, mobileTouchSrc.col, mobileTouchSrc.row, tarEch, tarCol, tarRow);
                     }
                 }
-                mobileTouchSrc = null; mobileDropTarget = null;
+
+                mobileTouchSrc = null;
+                mobileDropTarget = null;
             });
         }
 
+        // PC 데스크톱 마우스 드래그
         function handleDesktopDragStart(e, ech, col, row) {
             if (!isDragMode) return;
             draggedSeatSource = { ech, col, row };
             e.dataTransfer.setData('text/plain', JSON.stringify({ ech, col, row }));
             e.dataTransfer.effectAllowed = 'move';
         }
-        function handleDesktopDragOver(e, elem) { if (!isDragMode) return; e.preventDefault(); e.dataTransfer.dropEffect = 'move'; elem.classList.add('drag-over'); }
-        function handleDesktopDrop(e, tEch, tCol, tRow, elem) {
-            if (!isDragMode) return; e.preventDefault(); elem.classList.remove('drag-over');
+
+        function handleDesktopDragOver(e, elem) {
+            if (!isDragMode) return;
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+            elem.classList.add('drag-over');
+        }
+
+        function handleDesktopDrop(e, targetEch, targetCol, targetRow, elem) {
+            if (!isDragMode) return;
+            e.preventDefault();
+            elem.classList.remove('drag-over');
+            
             let src = draggedSeatSource;
-            if (!src) { try { src = JSON.parse(e.dataTransfer.getData('text/plain')); } catch(err) { return; } }
-            if (src && (src.ech !== tEch || src.col !== tCol || src.row !== tRow)) swapOrMoveSeat(src.ech, src.col, src.row, tEch, tCol, tRow);
+            if (!src) {
+                try { src = JSON.parse(e.dataTransfer.getData('text/plain')); } catch(err) { return; }
+            }
+
+            if (src && (src.ech !== targetEch || src.col !== targetCol || src.row !== targetRow)) {
+                swapOrMoveSeat(src.ech, src.col, src.row, targetEch, targetCol, targetRow);
+            }
             draggedSeatSource = null;
         }
+
+        // 터치/클릭 원터치 가 가치 교환
         function handleSeatClickForSwap(ech, col, row) {
             if (!selectedSeatForSwap) {
-                if (traineesData.find(t => t.echelon === ech && t.col === col && t.row === row)) { selectedSeatForSwap = { ech, col, row }; renderBoard(); }
+                const person = traineesData.find(t => t.ech === ech && t.col === col && t.row === row);
+                if (person) {
+                    selectedSeatForSwap = { ech, col, row };
+                    renderBoard();
+                }
             } else {
-                if (selectedSeatForSwap.ech !== ech || selectedSeatForSwap.col !== col || selectedSeatForSwap.row !== row) swapOrMoveSeat(selectedSeatForSwap.ech, selectedSeatForSwap.col, selectedSeatForSwap.row, ech, col, row);
-                selectedSeatForSwap = null; renderBoard();
+                if (selectedSeatForSwap.ech !== ech || selectedSeatForSwap.col !== col || selectedSeatForSwap.row !== row) {
+                    swapOrMoveSeat(selectedSeatForSwap.ech, selectedSeatForSwap.col, selectedSeatForSwap.row, ech, col, row);
+                }
+                selectedSeatForSwap = null;
+                renderBoard();
             }
         }
 
-        function swapOrMoveSeat(sEch, sCol, sRow, tEch, tCol, tRow) {
-            const srcPerson = traineesData.find(t => t.echelon === sEch && t.col === sCol && t.row === sRow);
-            const tarPerson = traineesData.find(t => t.echelon === tEch && t.col === tCol && t.row === tRow);
+        // 자리지 교환 로직
+        function swapOrMoveSeat(srcEch, srcCol, srcRow, tarEch, tarCol, tarRow) {
+            const srcPerson = traineesData.find(t => t.ech === srcEch && t.col == srcCol && t.row == srcRow);
+            const tarPerson = traineesData.find(t => t.ech === tarEch && t.col == tarCol && t.row == tarRow);
+
             if (!srcPerson) return;
+
             if (tarPerson) {
-                srcPerson.echelon = tEch; srcPerson.col = tCol; srcPerson.row = tRow;
-                tarPerson.echelon = sEch; tarPerson.col = sCol; tarPerson.row = sRow;
-            } else { srcPerson.echelon = tEch; srcPerson.col = tCol; srcPerson.row = tRow; }
+                srcPerson.ech = tarEch; srcPerson.col = tarCol; srcPerson.row = tarRow;
+                tarPerson.ech = srcEch; tarPerson.col = srcCol; tarPerson.row = srcRow;
+            } else {
+                srcPerson.ech = tarEch; srcPerson.col = tarCol; srcPerson.row = tarRow;
+            }
+
             localStorage.setItem('traineeList_264', JSON.stringify(traineesData));
             renderBoard();
+
+            const banner = document.getElementById('search-result-banner');
+            banner.className = "p-2.5 rounded-lg text-xs text-center font-semibold bg-sky-500/20 text-sky-300 border border-sky-500/30";
+            
+            banner.innerHTML = tarPerson 
+                ? `<strong>[${srcPerson.name}]</strong> 후보생과 <strong>[${tarPerson.name}]</strong> 후보생의 자리가 교환되었습니다.`
+                : `<strong>[${srcPerson.name}]</strong> 후보생이 <strong>제${tarEch}제대 ${tarCol}열 ${tarRow}행</strong> 위치로 이동되었습니다.`;
+            banner.classList.remove('hidden');
         }
 
+        // 검색
         function executeSearch() {
-            const n = document.getElementById('search-number').value.trim(), m = document.getElementById('search-name').value.trim();
-            document.querySelectorAll('.highlight-seat').forEach(e => e.classList.remove('highlight-seat'));
+            const n = document.getElementById('search-number').value.trim();
+            const m = document.getElementById('search-name').value.trim();
             const banner = document.getElementById('search-result-banner');
-            if (n === "76" || m.includes("박철완")) {
-                document.getElementById('commander-card').classList.add('highlight-seat');
-                document.getElementById('commander-card').scrollIntoView({ behavior: 'smooth', block: 'center' });
-                banner.className = "p-3 rounded-lg text-sm text-center font-semibold bg-emerald-500/20 text-emerald-300";
-                banner.innerHTML = `[76번 박철완] 위치: <strong>단상 앞 지휘자</strong>`; banner.classList.remove('hidden'); return;
+
+            document.querySelectorAll('.highlight-seat').forEach(e => e.classList.remove('highlight-seat'));
+
+            if (!n && !m) {
+                banner.className = "p-3 rounded-lg text-xs sm:text-sm text-center font-semibold bg-amber-500/20 text-amber-300 border border-amber-500/30";
+                banner.innerText = "교번 또는 성명을 입력해 주세요.";
+                banner.classList.remove('hidden');
+                return;
             }
+
+            if (n === "76" || m.includes("박철완")) {
+                const card = document.getElementById('commander-card');
+                card.classList.add('highlight-seat');
+                card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                banner.className = "p-3 rounded-lg text-xs sm:text-sm text-center font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30";
+                banner.innerHTML = `[76번 박철완] 후보생 위치: <strong>단상 앞 지휘자</strong>`;
+                banner.classList.remove('hidden');
+                return;
+            }
+
             const match = traineesData.find(t => (n && t.number === n) || (m && t.name.includes(m)));
             if (match) {
-                const target = document.getElementById(`seat-${match.echelon}-${match.col}-${match.row}`);
-                target.classList.add('highlight-seat'); target.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                banner.className = "p-3 rounded-lg text-sm text-center font-semibold bg-emerald-500/20 text-emerald-300";
-                banner.innerHTML = `[${match.number}번 ${match.name}] 위치: <strong>제${match.echelon}제대 ${match.col}열 ${match.row}행</strong>`; banner.classList.remove('hidden');
+                const target = document.getElementById(`seat-${match.ech}-${match.col}-${match.row}`);
+                if (target) {
+                    target.classList.add('highlight-seat');
+                    target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    banner.className = "p-3 rounded-lg text-xs sm:text-sm text-center font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30";
+                    banner.innerHTML = `[${match.number}번 ${match.name}] 위치: <strong>제${match.ech}제대 ${match.col}열 ${match.row}행</strong>${match.note ? `<br>비고: ${match.note}` : ''}`;
+                    banner.classList.remove('hidden');
+                }
+            } else {
+                banner.className = "p-3 rounded-lg text-xs sm:text-sm text-center font-semibold bg-rose-500/20 text-rose-300 border border-rose-500/30";
+                banner.innerText = "일치하는 후보생 정보를 찾을 수 없습니다.";
+                banner.classList.remove('hidden');
             }
         }
-        function resetSearch() { document.getElementById('search-number').value = ''; document.getElementById('search-name').value = ''; document.querySelectorAll('.highlight-seat').forEach(e => e.classList.remove('highlight-seat')); document.getElementById('search-result-banner').classList.add('hidden'); }
 
-        function checkAdminPassword() { if (prompt("관리자 비밀번호:") === ADMIN_PW) openAdminModal(); else alert("불일치"); }
+        function resetSearch() {
+            document.getElementById('search-number').value = '';
+            document.getElementById('search-name').value = '';
+            document.querySelectorAll('.highlight-seat').forEach(e => e.classList.remove('highlight-seat'));
+            document.getElementById('search-result-banner').classList.add('hidden');
+        }
+
+        // 관리자 모달
+        function checkAdminPassword() {
+            const pass = prompt("관리자 비밀번호를 입력하세요:");
+            if (pass === ADMIN_PW) {
+                openAdminModal();
+            } else if (pass !== null) {
+                alert("비밀번호가 일치하지 않습니다.");
+            }
+        }
+
         function openAdminModal() {
             document.getElementById('modal-content').innerHTML = `
-                <div class='flex justify-between items-center mb-3 border-b border-slate-800 pb-2'><h3 class='text-white font-bold text-base'>명단 관리자 설정</h3><button onclick='toggleModal("detail-modal")' class='text-slate-400'>&times;</button></div>
-                <div class='flex justify-between mb-2'><button onclick='exportCSV()' class='bg-slate-700 text-[11px] px-2.5 py-1 rounded text-white'>CSV 다운로드</button><button onclick='document.getElementById("csvFileInput").click()' class='bg-blue-600 text-[11px] px-2.5 py-1 rounded text-white'>CSV 업로드</button></div>
-                <div class='max-h-52 overflow-y-auto space-y-1 mb-4 pr-1 custom-scrollbar'>
+                <div class='flex justify-between items-center mb-3 border-b border-slate-800 pb-2'>
+                    <h3 class='text-white font-bold text-base'>명단 및 소스코드 관리자 설정</h3>
+                    <button onclick='toggleModal("detail-modal")' class='text-slate-400 hover:text-white text-lg'>&times;</button>
+                </div>
+
+                <div class='bg-emerald-950/40 border border-emerald-500/40 p-3 rounded-xl mb-4 space-y-2'>
+                    <div class='flex items-center justify-between'>
+                        <span class='text-xs font-bold text-emerald-300'>배포용 index.html 파일 생성</span>
+                        <span class='text-[10px] text-slate-400'>Vercel/GitHub에 덮어쓰기 가능</span>
+                    </div>
+                    <div class='flex gap-2'>
+                        <button onclick='downloadUpdatedHTML()' class='flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2 rounded-lg text-xs shadow-md transition flex items-center justify-center gap-1'>
+                            새로운 index.html 다운로드
+                        </button>
+                        <button onclick='copyUpdatedHTML()' class='flex-1 bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-2 rounded-lg text-xs shadow-md transition flex items-center justify-center gap-1'>
+                            전체 소스코드 복사
+                        </button>
+                    </div>
+                </div>
+
+                <details class='bg-slate-800/60 border border-slate-700 rounded-xl p-2.5 mb-4 group'>
+                    <summary class='text-xs font-semibold text-amber-300 cursor-pointer flex items-center justify-between'>
+                        <span>엑셀/CSV 텍스트 직접 붙여넣어 일괄 적용하기</span>
+                        <span class='text-[10px] text-slate-400 group-open:rotate-180 transition'>▼</span>
+                    </summary>
+                    <div class='mt-2.5 space-y-2'>
+                        <p class='text-[10px] text-slate-400 leading-relaxed'>
+                            엑셀에서 <strong>[제대, 열, 행, 교번, 성명, 비고]</strong> 범위 전체를 복사하여 아래에 붙여넣으세요.
+                        </p>
+                        <textarea id='paste-textarea' rows='3' placeholder='1\t1\t1\t1\t강민우\t' class='w-full bg-slate-950 border border-slate-700 rounded p-2 text-[10px] font-mono text-slate-200 focus:outline-none focus:border-amber-500 custom-scrollbar'></textarea>
+                        <button onclick='applyPastedText()' class='w-full bg-amber-600 hover:bg-amber-500 text-white font-bold py-1.5 rounded text-xs transition'>
+                            텍스트 데이터 전체 반영하기
+                        </button>
+                    </div>
+                </details>
+
+                <div class='flex justify-between items-center mb-2'>
+                    <span class='text-xs font-bold text-slate-300'>개별 명단 수정 (${traineesData.length}명)</span>
+                    <div class='flex gap-1.5'>
+                        <button onclick='exportCSV()' class='bg-slate-700 hover:bg-slate-600 text-slate-200 text-[11px] px-2.5 py-1 rounded'>CSV 파일 다운로드</button>
+                        <button onclick='document.getElementById("csvFileInput").click()' class='bg-blue-600 hover:bg-blue-500 text-white text-[11px] px-2.5 py-1 rounded'>CSV 파일 업로드</button>
+                    </div>
+                </div>
+
+                <div class='max-h-52 overflow-y-auto space-y-1 mb-4 pr-1 custom-scrollbar bg-slate-950/60 p-2 rounded-lg border border-slate-800'>
+                    <div class='flex gap-1 text-[10px] text-slate-400 mb-1 px-1 font-semibold'>
+                        <span class='w-12 text-center'>제대</span>
+                        <span class='w-8 text-center'>열</span>
+                        <span class='w-8 text-center'>행</span>
+                        <span class='w-12 text-center'>교번</span>
+                        <span class='flex-1 text-center'>성명</span>
+                        <span class='w-16 text-center'>비고</span>
+                        <span class='w-6 text-center'>삭제</span>
+                    </div>
                     ${traineesData.map((t, i) => `
                         <div class='flex gap-1 items-center'>
-                            <select id='e-${i}' class='w-12 bg-slate-800 p-1 text-[10px] rounded text-white'><option value='1' ${t.echelon===1?'selected':''}>1제대</option><option value='2' ${t.echelon===2?'selected':''}>2제대</option></select>
-                            <input class='w-8 bg-slate-800 p-1 text-[10px] rounded text-white' value='${t.col}' id='c-${i}'>
-                            <input class='w-8 bg-slate-800 p-1 text-[10px] rounded text-white' value='${t.row}' id='r-${i}'>
-                            <input class='w-12 bg-slate-800 p-1 text-[10px] rounded text-white' value='${t.number}' id='n-${i}'>
-                            <input class='flex-1 bg-slate-800 p-1 text-[10px] rounded text-white' value='${t.name}' id='m-${i}'>
-                            <button onclick='del(${i})' class='bg-rose-900 px-2 text-[10px] text-white'>X</button>
+                            <select id='e-${i}' class='w-12 bg-slate-800 p-1 text-[10px] rounded text-center text-white border border-slate-700'>
+                                <option value='1' ${t.ech === 1 ? 'selected' : ''}>1</option>
+                                <option value='2' ${t.ech === 2 ? 'selected' : ''}>2</option>
+                            </select>
+                            <input class='w-8 bg-slate-800 p-1 text-[10px] rounded text-center text-white border border-slate-700' value='${t.col}' id='c-${i}'>
+                            <input class='w-8 bg-slate-800 p-1 text-[10px] rounded text-center text-white border border-slate-700' value='${t.row}' id='r-${i}'>
+                            <input class='w-12 bg-slate-800 p-1 text-[10px] rounded text-center text-white border border-slate-700' value='${t.number}' id='n-${i}'>
+                            <input class='flex-1 bg-slate-800 p-1 text-[10px] rounded text-white border border-slate-700' value='${t.name}' id='m-${i}'>
+                            <input class='w-16 bg-slate-800 p-1 text-[10px] rounded text-white border border-slate-700' value='${t.note || ''}' id='o-${i}' placeholder='비고'>
+                            <button onclick='del(${i})' class='bg-rose-900/80 hover:bg-rose-800 text-rose-200 px-2 py-0.5 rounded text-[10px]'>X</button>
                         </div>
                     `).join('')}
                 </div>
-                <button onclick='add()' class='w-full bg-slate-800 text-slate-200 py-2 rounded-lg text-xs mb-2'>+ 인원 추가</button>
-                <button onclick='downloadUpdatedHTML()' class='w-full bg-emerald-600 text-white font-bold py-2 rounded-lg text-xs'>배포용 index.html 다운로드</button>
+
+                <div class='flex gap-2'>
+                    <button onclick='add()' class='flex-1 bg-slate-800 hover:bg-slate-700 text-slate-200 py-2 rounded-lg text-xs'>+ 인원 추가</button>
+                    <button onclick='saveLocalOnly()' class='flex-1 bg-slate-700 hover:bg-slate-600 text-slate-100 font-bold py-2 rounded-lg text-xs'>이 기기에만 임시 저장</button>
+                </div>
             `;
             document.getElementById('detail-modal').classList.remove('hidden');
         }
 
         function syncFormValues() {
             traineesData.forEach((_, i) => {
-                if (document.getElementById('e-'+i)) {
-                    traineesData[i].echelon = parseInt(document.getElementById('e-'+i).value);
-                    traineesData[i].col = parseInt(document.getElementById('c-'+i).value);
-                    traineesData[i].row = parseInt(document.getElementById('r-'+i).value);
-                    traineesData[i].number = document.getElementById('n-'+i).value;
-                    traineesData[i].name = document.getElementById('m-'+i).value;
+                const e = document.getElementById('e-' + i);
+                const c = document.getElementById('c-' + i);
+                const r = document.getElementById('r-' + i);
+                const n = document.getElementById('n-' + i);
+                const m = document.getElementById('m-' + i);
+                const o = document.getElementById('o-' + i);
+                if (e && c && r && n && m && o) {
+                    traineesData[i].ech = parseInt(e.value) || 1;
+                    traineesData[i].col = parseInt(c.value) || 1;
+                    traineesData[i].row = parseInt(r.value) || 1;
+                    traineesData[i].number = n.value.trim();
+                    traineesData[i].name = m.value.trim();
+                    traineesData[i].note = o.value.trim();
                 }
             });
         }
-        function del(i) { syncFormValues(); traineesData.splice(i, 1); openAdminModal(); renderBoard(); }
-        function add() { syncFormValues(); traineesData.push({ echelon: 1, col: 1, row: 1, number: "0", name: "신규", note: "" }); openAdminModal(); renderBoard(); }
+
+        function buildFullHTMLString() {
+            syncFormValues();
+            const e1List = traineesData.filter(t => t.ech === 1);
+            const e2List = traineesData.filter(t => t.ech === 2);
+
+            const e1Lines = e1List.map(item => 
+                `            { col: ${item.col}, row: ${item.row}, number: "${item.number}", name: "${item.name}", note: "${item.note || ''}" }`
+            ).join(',\n');
+
+            const e2Lines = e2List.map(item => 
+                `            { col: ${item.col}, row: ${item.row}, number: "${item.number}", name: "${item.name}", note: "${item.note || ''}" }`
+            ).join(',\n');
+
+            let currentDoc = document.documentElement.outerHTML;
+            const regex1 = /const echelon1Data = \[\s*[\s\S]*?\n\s*\];/;
+            const regex2 = /const echelon2Data = \[\s*[\s\S]*?\n\s*\];/;
+
+            const replacement1 = `const echelon1Data = [\n${e1Lines}\n        ];`;
+            const replacement2 = `const echelon2Data = [\n${e2Lines}\n        ];`;
+
+            currentDoc = currentDoc.replace(regex1, replacement1).replace(regex2, replacement2);
+            return "<!DOCTYPE html>\n" + currentDoc;
+        }
 
         function downloadUpdatedHTML() {
-            syncFormValues();
-            const e1Str = traineesData.filter(t => t.echelon === 1).map(t => `{ col: ${t.col}, row: ${t.row}, number: "${t.number}", name: "${t.name}", note: "${t.note||''}" }`).join(', ');
-            const e2Str = traineesData.filter(t => t.echelon === 2).map(t => `{ col: ${t.col}, row: ${t.row}, number: "${t.number}", name: "${t.name}", note: "${t.note||''}" }`).join(', ');
-            
-            let html = document.documentElement.outerHTML;
-            html = html.replace(/const echelon1Data = \[[\s\S]*?\];/, `const echelon1Data = [\n            ${e1Str}\n        ];`);
-            html = html.replace(/const echelon2Data = \[[\s\S]*?\];/, `const echelon2Data = [\n            ${e2Str}\n        ];`);
-            
-            const blob = new Blob(["<!DOCTYPE html>\n" + html], { type: 'text/html;charset=utf-8' });
-            const link = document.createElement('a'); link.href = URL.createObjectURL(blob); link.download = 'index.html'; link.click();
-            alert("다운로드 되었습니다. 이 파일을 배포 서버에 업로드하세요.");
+            const finalHTML = buildFullHTMLString();
+            const blob = new Blob([finalHTML], { type: 'text/html;charset=utf-8' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = 'index.html';
+            link.click();
+            alert("수정사항이 반영된 [index.html] 파일이 다운로드되었습니다.\n\n이 파일을 Vercel 또는 GitHub에 덮어쓰기 업로드하시면 모든 사용자에게 영구 적용됩니다.");
+        }
+
+        function copyUpdatedHTML() {
+            const finalHTML = buildFullHTMLString();
+            const textarea = document.createElement('textarea');
+            textarea.value = finalHTML;
+            document.body.appendChild(textarea);
+            textarea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textarea);
+            alert("수정된 전체 소스코드가 클립보드에 복사되었습니다.\n\nindex.html 파일에 그대로 붙여넣기 하시면 됩니다.");
+        }
+
+        function applyPastedText() {
+            const rawText = document.getElementById('paste-textarea').value.trim();
+            if (!rawText) return alert("붙여넣을 텍스트를 입력해주세요.");
+
+            const lines = rawText.split(/\r?\n/);
+            const startIndex = (lines[0].includes("교번") || lines[0].includes("성명")) ? 1 : 0;
+            const parsed = [];
+
+            for (let i = startIndex; i < lines.length; i++) {
+                const line = lines[i].trim();
+                if (!line) continue;
+                const delimiter = line.includes('\t') ? '\t' : ',';
+                const p = line.split(delimiter).map(x => x.trim());
+
+                if (p.length >= 5) {
+                    parsed.push({
+                        ech: parseInt(p[0]) || 1,
+                        col: parseInt(p[1]) || 1,
+                        row: parseInt(p[2]) || 1,
+                        number: p[3] || "0",
+                        name: p[4] || "이름",
+                        note: p[5] || ""
+                    });
+                } else if (p.length === 4) {
+                    parsed.push({
+                        ech: 1,
+                        col: parseInt(p[0]) || 1,
+                        row: parseInt(p[1]) || 1,
+                        number: p[2] || "0",
+                        name: p[3] || "이름",
+                        note: ""
+                    });
+                }
+            }
+
+            if (parsed.length > 0) {
+                traineesData = parsed;
+                localStorage.setItem('traineeList_264', JSON.stringify(traineesData));
+                openAdminModal();
+                renderBoard();
+                alert(`총 ${parsed.length}명의 명단이 반영되었습니다.`);
+            } else {
+                alert("데이터 형식을 확인해주세요. ([제대], [열], [행], [교번], [성명], [비고])");
+            }
         }
 
         function exportCSV() {
-            syncFormValues(); let csv = "\uFEFF제대,열,행,교번,성명\n" + traineesData.map(t => `${t.echelon},${t.col},${t.row},${t.number},${t.name}`).join("\n");
-            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' }); const link = document.createElement('a'); link.href = URL.createObjectURL(blob); link.download = '명단.csv'; link.click();
+            syncFormValues();
+            let csv = "\uFEFF제대,열,행,교번,성명,비고\n" + traineesData.map(t => `${t.ech},${t.col},${t.row},${t.number},${t.name},${t.note || ''}`).join("\n");
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = '특부후264기_배치명단.csv';
+            link.click();
         }
+
         function importCSV(e) {
             const reader = new FileReader();
             reader.onload = (event) => {
-                const lines = event.target.result.split(/\r?\n/).slice(1);
-                traineesData = lines.filter(l => l.trim()).map(l => { const [e, c, r, n, m] = l.split(','); return { echelon: parseInt(e)||1, col: parseInt(c)||1, row: parseInt(r)||1, number: n||"0", name: m||"신규", note: "" }; });
-                openAdminModal(); renderBoard();
+                try {
+                    const lines = event.target.result.split(/\r?\n/).slice(1);
+                    traineesData = lines.filter(l => l.trim() !== "").map(l => {
+                        const [ech, col, row, number, name, note] = l.split(',');
+                        return { 
+                            ech: parseInt(ech) || 1, 
+                            col: parseInt(col) || 1, 
+                            row: parseInt(row) || 1, 
+                            number: number || "0", 
+                            name: name || "신규", 
+                            note: note || '' 
+                        };
+                    });
+                    localStorage.setItem('traineeList_264', JSON.stringify(traineesData));
+                    openAdminModal();
+                    renderBoard();
+                    alert("CSV 파일이 적용되었습니다.");
+                } catch(err) {
+                    alert("CSV 파일을 읽는 중 오류가 발생했습니다.");
+                }
             };
             reader.readAsText(e.target.files[0], 'euc-kr');
         }
 
+        function del(i) { syncFormValues(); traineesData.splice(i, 1); openAdminModal(); renderBoard(); }
+        function add() { syncFormValues(); traineesData.push({ ech: 1, col: 1, row: 1, number: "0", name: "신규", note: "" }); openAdminModal(); renderBoard(); }
+        
+        function saveLocalOnly() {
+            syncFormValues();
+            localStorage.setItem('traineeList_264', JSON.stringify(traineesData));
+            alert("이 기기에만 임시 저장되었습니다.");
+            toggleModal('detail-modal');
+            renderBoard();
+        }
+
         function toggleModal(id) { document.getElementById(id).classList.toggle('hidden'); }
-        function openDetailModal(p) { alert(`[${p.number}번 ${p.name}] 제${p.echelon}제대 ${p.col}열 ${p.row}행`); }
-        function openCommanderModal() { alert("[76번 박철완] 단상 앞 지휘자"); }
-        function copyCurrentUrl() { navigator.clipboard.writeText(window.location.href); alert("주소가 복사되었습니다."); }
+        function copyCurrentUrl() {
+            const dummy = document.createElement('textarea');
+            dummy.value = window.location.href;
+            document.body.appendChild(dummy);
+            dummy.select();
+            document.execCommand('copy');
+            document.body.removeChild(dummy);
+            alert("웹사이트 주소가 복사되었습니다.");
+        }
+
+        function openCommanderModal() {
+            toggleModal('detail-modal');
+            document.getElementById('modal-content').innerHTML = `
+                <div class="bg-slate-800 p-4 rounded-xl space-y-2 border border-slate-700">
+                    <div class="flex justify-between"><span class="text-slate-400">교번:</span> <span class="font-bold text-slate-100">76번</span></div>
+                    <div class="flex justify-between"><span class="text-slate-400">성명:</span> <span class="font-bold text-emerald-400">박철완</span></div>
+                    <div class="flex justify-between"><span class="text-slate-400">직책:</span> <span class="font-bold text-amber-400">지휘자</span></div>
+                    <div class="flex justify-between"><span class="text-slate-400">위치:</span> <span class="text-slate-200">단상 앞 독립 위치</span></div>
+                </div>
+                <button onclick="toggleModal('detail-modal')" class="mt-4 w-full bg-slate-800 hover:bg-slate-700 text-white font-semibold py-2 rounded-lg text-xs">닫기</button>
+            `;
+        }
+
+        function openDetailModal(p) {
+            toggleModal('detail-modal');
+            const index = traineesData.findIndex(t => t.ech === p.ech && t.col === p.col && t.row === p.row);
+
+            document.getElementById('modal-content').innerHTML = `
+                <div class="bg-slate-800 p-4 rounded-xl space-y-3 border border-slate-700">
+                    <div class="flex justify-between items-center border-b border-slate-700 pb-2">
+                        <span class="font-bold text-sm text-emerald-400">후보생 상세 정보</span>
+                        <span class="text-xs font-semibold text-amber-400">제${p.ech}제대 ${p.col}열 ${p.row}행</span>
+                    </div>
+                    <div class="space-y-2 text-xs">
+                        <div class="flex justify-between"><span class="text-slate-400">교번:</span> <span class="font-bold text-slate-100">${p.number}번</span></div>
+                        <div class="flex justify-between"><span class="text-slate-400">성명:</span> <span class="font-bold text-emerald-400">${p.name}</span></div>
+                        <div class="flex justify-between"><span class="text-slate-400">좌석 위치:</span> <span class="text-slate-200">제${p.ech}제대 ${p.col}열 ${p.row}행</span></div>
+                        ${p.note ? `<div class="flex justify-between"><span class="text-slate-400">비고:</span> <span class="text-slate-200">${p.note}</span></div>` : ''}
+                    </div>
+                    <button onclick="requestQuickEditAuth(${index})" class="w-full mt-2 bg-slate-700 hover:bg-slate-600 text-sky-300 border border-sky-500/30 font-semibold py-2 rounded text-xs transition">
+                        이 후보생 정보 수정하기 (관리자 비밀번호 필요)
+                    </button>
+                </div>
+                <button onclick="toggleModal('detail-modal')" class="mt-3 w-full bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold py-2 rounded-lg text-xs">닫기</button>
+            `;
+        }
+
+        function requestQuickEditAuth(index) {
+            const pass = prompt("후보생 정보를 수정하려면 관리자 비밀번호를 입력하세요:");
+            if (pass === ADMIN_PW) {
+                renderEditableDetail(index);
+            } else if (pass !== null) {
+                alert("비밀번호가 일치하지 않습니다.");
+            }
+        }
+
+        function renderEditableDetail(index) {
+            const p = traineesData[index];
+
+            document.getElementById('modal-content').innerHTML = `
+                <div class="bg-slate-800 p-4 rounded-xl space-y-3 border border-slate-700">
+                    <div class="flex justify-between items-center border-b border-slate-700 pb-2">
+                        <span class="font-bold text-sm text-amber-400">후보생 정보 수정 (관리자)</span>
+                        <span class="text-xs font-semibold text-sky-400">제${p.ech}제대 ${p.col}열 ${p.row}행</span>
+                    </div>
+                    <div class="space-y-2 text-xs">
+                        <div>
+                            <label class="block text-slate-400 mb-1">교번</label>
+                            <input type="text" id="quick-edit-num" value="${p.number}" class="w-full bg-slate-900 border border-slate-700 rounded px-2.5 py-1.5 text-white font-mono focus:outline-none focus:border-emerald-500">
+                        </div>
+                        <div>
+                            <label class="block text-slate-400 mb-1">성명</label>
+                            <input type="text" id="quick-edit-name" value="${p.name}" class="w-full bg-slate-900 border border-slate-700 rounded px-2.5 py-1.5 text-white focus:outline-none focus:border-emerald-500">
+                        </div>
+                        <div>
+                            <label class="block text-slate-400 mb-1">비고</label>
+                            <input type="text" id="quick-edit-note" value="${p.note || ''}" placeholder="비고 입력" class="w-full bg-slate-900 border border-slate-700 rounded px-2.5 py-1.5 text-white focus:outline-none focus:border-emerald-500">
+                        </div>
+                    </div>
+                    <button onclick="saveQuickEdit(${index})" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2 rounded text-xs transition">
+                        수정사항 저장하기
+                    </button>
+                </div>
+                <button onclick="toggleModal('detail-modal')" class="mt-3 w-full bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold py-2 rounded-lg text-xs">닫기</button>
+            `;
+        }
+
+        function saveQuickEdit(idx) {
+            if (idx === -1) return;
+            const newNum = document.getElementById('quick-edit-num').value.trim();
+            const newName = document.getElementById('quick-edit-name').value.trim();
+            const newNote = document.getElementById('quick-edit-note').value.trim();
+
+            if (!newName) {
+                alert("성명을 입력해 주세요.");
+                return;
+            }
+
+            traineesData[idx].number = newNum;
+            traineesData[idx].name = newName;
+            traineesData[idx].note = newNote;
+
+            localStorage.setItem('traineeList_264', JSON.stringify(traineesData));
+            alert(`[${newName}] 후보생 정보가 수정되었습니다.`);
+            toggleModal('detail-modal');
+            renderBoard();
+        }
 
         window.onload = renderBoard;
     </script>
 </body>
 </html>
+```
