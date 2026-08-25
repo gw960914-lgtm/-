@@ -3020,7 +3020,7 @@
         });
 
         let isDragMode = false;
-        let isStageBottomView = true; // 기본: 단상 하단 시점 (현장 배치)
+        let isStageBottomView = false; // 기본: 단상 하단 시점 (현장 배치)
         let selectedSeatForSwap = null;
         let draggedSeatSource = null;
 
@@ -3092,190 +3092,104 @@
         }
 
         function renderBoard() {
-            renderSpecialLeaders();
-            renderEchelonsContainer();
-        }
-
-        function renderSpecialLeaders() {
-            const commander = specialLeaders.find(s => s.id === 'commander') || specialLeadersDefault[0];
-            const ech1Leader = specialLeaders.find(s => s.id === 'ech1_leader') || specialLeadersDefault[1];
-            const ech2Leader = specialLeaders.find(s => s.id === 'ech2_leader') || specialLeadersDefault[2];
-
-            // 1. 단상 앞 지휘자 (박철완)
-            const cmdContainer = document.getElementById('commander-card-container');
-            cmdContainer.innerHTML = '';
-            const cmdBtn = createSpecialLeaderCard(commander, getBrigadeStyle(commander.note));
+        (commander, getBrigadeStyle(commander.note));
             cmdContainer.appendChild(cmdBtn);
+ function renderBoard() {
+    renderSpecialLeaders();
+    renderEchelonsContainer();
+}
 
-            // 2. 제대장 카드 (시점에 따른 좌우 배치)
-            const ech1Container = document.getElementById('ech1-leader-container');
-            const ech2Container = document.getElementById('ech2-leader-container');
-            ech1Container.innerHTML = '';
-            ech2Container.innerHTML = '';
+function renderSpecialLeaders() {
+    const commander = specialLeaders.find(s => s.id === 'commander') || specialLeadersDefault[0];
+    const ech1Leader = specialLeaders.find(s => s.id === 'ech1_leader') || specialLeadersDefault[1];
+    const ech2Leader = specialLeaders.find(s => s.id === 'ech2_leader') || specialLeadersDefault[2];
 
-            if (isStageBottomView) {
-                // 단상 하단 시점: 좌측 1제대장 (박인혁), 우측 2제대장 (정형관)
-                ech1Container.appendChild(createSpecialLeaderCard(ech1Leader, getBrigadeStyle(ech1Leader.note)));
-                ech2Container.appendChild(createSpecialLeaderCard(ech2Leader, getBrigadeStyle(ech2Leader.note)));
-            } else {
-                // 단상 상단 180도 회전 시점: 좌측 2제대장 (정형관), 우측 1제대장 (박인혁)
-                ech1Container.appendChild(createSpecialLeaderCard(ech2Leader, getBrigadeStyle(ech2Leader.note)));
-                ech2Container.appendChild(createSpecialLeaderCard(ech1Leader, getBrigadeStyle(ech1Leader.note)));
-            }
-        }
+    // 1. 단상 앞 지휘자
+    const cmdContainer = document.getElementById('commander-card-container');
+    cmdContainer.innerHTML = '';
+    cmdContainer.appendChild(createSpecialLeaderCard(commander, getBrigadeStyle(commander.note)));
 
-        function createSpecialLeaderCard(leaderObj, defaultClass) {
-            const card = document.createElement('button');
-            const isSelected = selectedSeatForSwap && selectedSeatForSwap.type === 'special' && selectedSeatForSwap.id === leaderObj.id;
-            
-            card.className = `w-full p-2.5 rounded-xl shadow-md transition cursor-pointer text-center ${isSelected ? 'selected-swap' : defaultClass}`;
-            card.dataset.type = 'special';
-            card.dataset.id = leaderObj.id;
+    // 2. 제대장 (좌측: 1제대장 박인혁 / 우측: 2제대장 정형관)
+    const ech1Container = document.getElementById('ech1-leader-container');
+    const ech2Container = document.getElementById('ech2-leader-container');
+    ech1Container.innerHTML = '';
+    ech2Container.innerHTML = '';
 
-            card.innerHTML = `
-                <span class="text-emerald-300 font-bold block mb-0.5 text-xs">${leaderObj.title}</span>
-                <span class="text-slate-100 font-extrabold text-sm">${leaderObj.name}</span>
-                ${leaderObj.note ? `<span class="text-[9px] font-semibold text-amber-200 block mt-0.5 opacity-90">${leaderObj.note}</span>` : ''}
-            `;
+    if (isStageBottomView) {
+        // 단상 하단 시점 (180도 회전 시)
+        ech1Container.appendChild(createSpecialLeaderCard(ech2Leader, getBrigadeStyle(ech2Leader.note)));
+        ech2Container.appendChild(createSpecialLeaderCard(ech1Leader, getBrigadeStyle(ech1Leader.note)));
+    } else {
+        // 단상 상단 기본 시점 (좌측 1제대장, 우측 2제대장)
+        ech1Container.appendChild(createSpecialLeaderCard(ech1Leader, getBrigadeStyle(ech1Leader.note)));
+        ech2Container.appendChild(createSpecialLeaderCard(ech2Leader, getBrigadeStyle(ech2Leader.note)));
+    }
+}
 
-            if (isDragMode) {
-                card.draggable = true;
-                card.ondragstart = (e) => handleSpecialDragStart(e, leaderObj.id);
-                card.ondragover = (e) => handleDesktopDragOver(e, card);
-                card.ondragleave = () => card.classList.remove('drag-over');
-                card.ondrop = (e) => handleSpecialDrop(e, leaderObj.id, card);
-                bindSpecialMobileTouch(card, leaderObj.id);
-            } else {
-                card.draggable = false;
-            }
+function renderEchelonsContainer() {
+    const container = document.getElementById('echelons-container');
+    container.innerHTML = '';
 
-            card.onclick = () => {
-                if (isDragMode) handleSpecialClickForSwap(leaderObj.id);
-                else openDetailModalSpecial(leaderObj);
+    if (isStageBottomView) {
+        // [단상 하단 시점] 상단: 16행(출입문) -> 하단: 1행(단상) / 좌: 2제대(5~1열), 우: 1제대(5~1열)
+        const rows = [16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1];
+        container.appendChild(createEchelonElement(2, [5, 4, 3, 2, 1], rows, "제2제대 (5개 열)", "text-emerald-300"));
+
+        const divider = document.createElement('div');
+        divider.className = "w-px bg-slate-800 self-stretch my-2";
+        container.appendChild(divider);
+
+        container.appendChild(createEchelonElement(1, [5, 4, 3, 2, 1], rows, "제1제대 (5개 열)", "text-purple-300"));
+    } else {
+        // [단상 상단 기본 시점] 상단: 1행(단상) -> 하단: 16행(출입문) / 좌: 1제대(1~5열), 우: 2제대(1~5열)
+        const rows = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16];
+        container.appendChild(createEchelonElement(1, [1, 2, 3, 4, 5], rows, "제1제대 (5개 열)", "text-purple-300"));
+
+        const divider = document.createElement('div');
+        divider.className = "w-px bg-slate-800 self-stretch my-2";
+        container.appendChild(divider);
+
+        container.appendChild(createEchelonElement(2, [1, 2, 3, 4, 5], rows, "제2제대 (5개 열)", "text-emerald-300"));
+    }
+}
+
+function createEchelonElement(echelonNum, colOrderArray, rowOrderArray, titleText, textColorClass) {
+    const wrapper = document.createElement('div');
+    wrapper.className = "space-y-2.5";
+
+    const headerDiv = document.createElement('div');
+    headerDiv.className = `text-center font-bold text-xs ${textColorClass} border-b border-slate-800 pb-1 flex justify-between items-center px-1`;
+    headerDiv.innerHTML = `<span>${titleText}</span><span class="text-[10px] font-normal opacity-80">80명</span>`;
+    wrapper.appendChild(headerDiv);
+
+    const gridHeaders = document.createElement('div');
+    gridHeaders.className = `grid grid-cols-[30px_repeat(5,1fr)] gap-1 text-center text-[10px] font-semibold ${textColorClass}`;
+    gridHeaders.innerHTML = '<div></div>';
+    colOrderArray.forEach(col => {
+        gridHeaders.innerHTML += `<div>${col}열</div>`;
+    });
+    wrapper.appendChild(gridHeaders);
+
+    const gridBody = document.createElement('div');
+    gridBody.className = "grid grid-cols-[30px_repeat(5,1fr)] gap-1";
+
+    rowOrderArray.forEach(row => {
+        const rowLabel = document.createElement('div');
+        rowLabel.className = "text-[9px] flex items-center justify-center text-slate-500 font-mono";
+        rowLabel.innerText = `${row}행`;
+        gridBody.appendChild(rowLabel);
+
+        colOrderArray.forEach(col => {
+            const trainee = traineesData.find(t => t.ech === echelonNum && t.col === col && t.row === row) || {
+                ech: echelonNum, col: col, row: row, number: "-", name: "공석", note: ""
             };
+            gridBody.appendChild(createSeatButton(trainee));
+        });
+    });
 
-            return card;
-        }
-
-        function renderEchelonsContainer() {
-            const container = document.getElementById('echelons-container');
-            container.innerHTML = '';
-
-            if (isStageBottomView) {
-                // 단상 하단 시점 (현장 배치 / 사진 배치표 구도): 좌측 1제대(Col 1~5), 우측 2제대(Col 1~5)
-                container.appendChild(createEchelonElement(1, [1, 2, 3, 4, 5], "제1제대 (5개 열)", "text-purple-300", "border-purple-300"));
-                
-                const divider = document.createElement('div');
-                divider.className = "w-px bg-slate-800 self-stretch my-2";
-                container.appendChild(divider);
-
-                container.appendChild(createEchelonElement(2, [1, 2, 3, 4, 5], "제2제대 (5개 열)", "text-emerald-300", "border-emerald-300"));
-            } else {
-                // 단상 상단 시점 (사열대 관람 180도 회전): 좌측 2제대(Col 5~1), 우측 1제대(Col 5~1)
-                container.appendChild(createEchelonElement(2, [5, 4, 3, 2, 1], "제2제대 (5개 열)", "text-emerald-300", "border-emerald-300"));
-                
-                const divider = document.createElement('div');
-                divider.className = "w-px bg-slate-800 self-stretch my-2";
-                container.appendChild(divider);
-
-                container.appendChild(createEchelonElement(1, [5, 4, 3, 2, 1], "제1제대 (5개 열)", "text-purple-300", "border-purple-300"));
-            }
-        }
-
-        function createEchelonElement(echelonNum, colOrderArray, titleText, textColorClass, borderColorClass) {
-            const wrapper = document.createElement('div');
-            wrapper.className = "space-y-2.5";
-
-            const headerDiv = document.createElement('div');
-            headerDiv.className = `text-center font-bold text-xs ${textColorClass} border-b border-slate-800 pb-1 flex justify-between items-center px-1`;
-            headerDiv.innerHTML = `<span>${titleText}</span><span class="text-[10px] font-normal opacity-80">80명</span>`;
-            wrapper.appendChild(headerDiv);
-
-            const gridHeaders = document.createElement('div');
-            gridHeaders.className = `grid grid-cols-[30px_repeat(5,1fr)] gap-1 text-center text-[10px] font-semibold ${textColorClass}`;
-            gridHeaders.innerHTML = '<div></div>';
-            colOrderArray.forEach(c => {
-                gridHeaders.innerHTML += `<div>${c}열</div>`;
-            });
-            wrapper.appendChild(gridHeaders);
-
-            const gridBody = document.createElement('div');
-            gridBody.className = "grid grid-cols-[30px_repeat(5,1fr)] gap-1";
-
-            // 시점에 따른 행(Row) 순서
-            // 단상 하단 시점 (현장 배치 / 사진 배치표 구도): 상단 1행 ~ 하단 16행 (단상 근처에 16행, 사진 상단에 1행 김현준A)
-            // 단상 상단 시점 (180도 관람 회전): 상단 16행 ~ 하단 1행
-            const rowLoopArray = [];
-            if (isStageBottomView) {
-                for (let r = 1; r <= 16; r++) rowLoopArray.push(r);
-            } else {
-                for (let r = 16; r >= 1; r--) rowLoopArray.push(r);
-            }
-
-            rowLoopArray.forEach(r => {
-                const rowLabel = document.createElement('div');
-                rowLabel.className = "text-[9px] flex items-center justify-center text-slate-500 font-mono";
-                rowLabel.innerText = `${r}행`;
-                gridBody.appendChild(rowLabel);
-
-                colOrderArray.forEach(c => {
-                    const person = traineesData.find(t => t.ech === echelonNum && t.col === c && t.row === r);
-                    const seatBtn = document.createElement('button');
-                    
-                    seatBtn.dataset.ech = echelonNum;
-                    seatBtn.dataset.col = c;
-                    seatBtn.dataset.row = r;
-                    seatBtn.dataset.type = 'grid';
-                    seatBtn.id = `seat-${echelonNum}-${c}-${r}`;
-
-                    if (person) {
-                        const isSelected = selectedSeatForSwap && selectedSeatForSwap.type === 'grid' && selectedSeatForSwap.ech === echelonNum && selectedSeatForSwap.col === c && selectedSeatForSwap.row === r;
-                        const cardBg = getBrigadeStyle(person.note);
-
-                        seatBtn.className = `p-1 rounded border text-center min-h-[44px] transition ${isSelected ? 'selected-swap' : cardBg} border-slate-700/80 hover:border-emerald-500 flex flex-col items-center justify-center relative shadow-sm`;
-                        
-                        let noteBadge = person.note ? `<span class="text-[7.5px] font-bold text-amber-200 bg-black/40 px-1 rounded block leading-tight mt-0.5 max-w-[62px] truncate">${person.note}</span>` : '';
-                        seatBtn.innerHTML = `
-                            <span class="font-extrabold text-slate-100 text-[10.5px] leading-tight">${person.name}</span>
-                            ${noteBadge}
-                        `;
-                        
-                        if (isDragMode) {
-                            seatBtn.draggable = true;
-                            seatBtn.ondragstart = (e) => handleDesktopDragStart(e, echelonNum, c, r);
-                            seatBtn.ondragover = (e) => handleDesktopDragOver(e, seatBtn);
-                            seatBtn.ondragleave = () => seatBtn.classList.remove('drag-over');
-                            seatBtn.ondrop = (e) => handleDesktopDrop(e, echelonNum, c, r, seatBtn);
-                            bindMobileTouch(seatBtn, echelonNum, c, r);
-                        } else {
-                            seatBtn.draggable = false;
-                        }
-
-                        seatBtn.onclick = () => {
-                            if (isDragMode) handleSeatClickForSwap(echelonNum, c, r);
-                            else openDetailModal(person);
-                        };
-                    } else {
-                        // 공석
-                        seatBtn.className = "bg-slate-900/40 border border-slate-800/80 rounded min-h-[44px]";
-                        if (isDragMode) {
-                            seatBtn.ondragover = (e) => handleDesktopDragOver(e, seatBtn);
-                            seatBtn.ondragleave = () => seatBtn.classList.remove('drag-over');
-                            seatBtn.ondrop = (e) => handleDesktopDrop(e, echelonNum, c, r, seatBtn);
-                            bindMobileTouch(seatBtn, echelonNum, c, r);
-                        }
-                        seatBtn.onclick = () => {
-                            if (isDragMode && selectedSeatForSwap) handleSeatClickForSwap(echelonNum, c, r);
-                        };
-                    }
-                    gridBody.appendChild(seatBtn);
-                });
-            });
-
-            wrapper.appendChild(gridBody);
-            return wrapper;
-        }
-
+    wrapper.appendChild(gridBody);
+    return wrapper;
+}
         function bindMobileTouch(elem, ech, col, row) {
             elem.addEventListener("touchstart", function (e) {
                 if (!isDragMode) return;
@@ -3911,6 +3825,9 @@
         }
 
         window.onload = renderBoard;
+        window.addEventListener('DOMContentLoaded', () => {
+    renderBoard();
+});
     </script>
 
 </body></html>
