@@ -3089,45 +3089,50 @@
                 msg.classList.add('hidden');
             }
             renderBoard();
-        }
- function renderBoard() {
+        /* 1. 전체 화면 렌더링 진입 함수 */
+function renderBoard() {
     renderSpecialLeaders();
     renderEchelonsContainer();
 }
 
+/* 2. 지휘관/제대장 렌더링 (단상 상단: 좌 1제대장, 우 2제대장) */
 function renderSpecialLeaders() {
     const commander = specialLeaders.find(s => s.id === 'commander') || specialLeadersDefault[0];
     const ech1Leader = specialLeaders.find(s => s.id === 'ech1_leader') || specialLeadersDefault[1];
     const ech2Leader = specialLeaders.find(s => s.id === 'ech2_leader') || specialLeadersDefault[2];
 
-    // 1. 단상 앞 지휘자
     const cmdContainer = document.getElementById('commander-card-container');
-    cmdContainer.innerHTML = '';
-    cmdContainer.appendChild(createSpecialLeaderCard(commander, getBrigadeStyle(commander.note)));
+    if (cmdContainer) {
+        cmdContainer.innerHTML = '';
+        cmdContainer.appendChild(createSpecialLeaderCard(commander, getBrigadeStyle(commander.note)));
+    }
 
-    // 2. 제대장 (좌측: 1제대장 박인혁 / 우측: 2제대장 정형관)
     const ech1Container = document.getElementById('ech1-leader-container');
     const ech2Container = document.getElementById('ech2-leader-container');
-    ech1Container.innerHTML = '';
-    ech2Container.innerHTML = '';
+    if (ech1Container && ech2Container) {
+        ech1Container.innerHTML = '';
+        ech2Container.innerHTML = '';
 
-    if (isStageBottomView) {
-        // 단상 하단 시점 (180도 회전 시)
-        ech1Container.appendChild(createSpecialLeaderCard(ech2Leader, getBrigadeStyle(ech2Leader.note)));
-        ech2Container.appendChild(createSpecialLeaderCard(ech1Leader, getBrigadeStyle(ech1Leader.note)));
-    } else {
-        // 단상 상단 기본 시점 (좌측 1제대장, 우측 2제대장)
-        ech1Container.appendChild(createSpecialLeaderCard(ech1Leader, getBrigadeStyle(ech1Leader.note)));
-        ech2Container.appendChild(createSpecialLeaderCard(ech2Leader, getBrigadeStyle(ech2Leader.note)));
+        if (isStageBottomView) {
+            // 단상 하단 시점 (180도 회전 시)
+            ech1Container.appendChild(createSpecialLeaderCard(ech2Leader, getBrigadeStyle(ech2Leader.note)));
+            ech2Container.appendChild(createSpecialLeaderCard(ech1Leader, getBrigadeStyle(ech1Leader.note)));
+        } else {
+            // 단상 상단 기본 시점 (좌: 1제대장 박인혁, 우: 2제대장 정형관)
+            ech1Container.appendChild(createSpecialLeaderCard(ech1Leader, getBrigadeStyle(ech1Leader.note)));
+            ech2Container.appendChild(createSpecialLeaderCard(ech2Leader, getBrigadeStyle(ech2Leader.note)));
+        }
     }
 }
 
+/* 3. 제대 컨테이너 렌더링 (단상 상단: 좌 1제대 1~5열, 우 2제대 1~5열, 상단 1행) */
 function renderEchelonsContainer() {
     const container = document.getElementById('echelons-container');
+    if (!container) return;
     container.innerHTML = '';
 
     if (isStageBottomView) {
-        // [단상 하단 시점] 상단: 16행(출입문) -> 하단: 1행(단상) / 좌: 2제대(5~1열), 우: 1제대(5~1열)
+        // [단상 하단 시점] 상단: 16행(출입문) -> 하단: 1행(단상)
         const rows = [16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1];
         container.appendChild(createEchelonElement(2, [5, 4, 3, 2, 1], rows, "제2제대 (5개 열)", "text-emerald-300"));
 
@@ -3137,7 +3142,7 @@ function renderEchelonsContainer() {
 
         container.appendChild(createEchelonElement(1, [5, 4, 3, 2, 1], rows, "제1제대 (5개 열)", "text-purple-300"));
     } else {
-        // [단상 상단 기본 시점] 상단: 1행(단상) -> 하단: 16행(출입문) / 좌: 1제대(1~5열), 우: 2제대(1~5열)
+        // [단상 상단 기본 시점] 상단: 1행(단상) -> 하단: 16행(출입문)
         const rows = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16];
         container.appendChild(createEchelonElement(1, [1, 2, 3, 4, 5], rows, "제1제대 (5개 열)", "text-purple-300"));
 
@@ -3149,6 +3154,7 @@ function renderEchelonsContainer() {
     }
 }
 
+/* 4. 개별 제대 그리드 생성 */
 function createEchelonElement(echelonNum, colOrderArray, rowOrderArray, titleText, textColorClass) {
     const wrapper = document.createElement('div');
     wrapper.className = "space-y-2.5";
@@ -3186,6 +3192,49 @@ function createEchelonElement(echelonNum, colOrderArray, rowOrderArray, titleTex
     wrapper.appendChild(gridBody);
     return wrapper;
 }
+
+/* 5. 개별 좌석 버튼 생성 (누락되었던 함수 정의) */
+function createSeatButton(trainee) {
+    const btn = document.createElement('button');
+    const isSelected = selectedSeatForSwap && selectedSeatForSwap.type === 'grid' && 
+                       selectedSeatForSwap.ech === trainee.ech && 
+                       selectedSeatForSwap.col === trainee.col && 
+                       selectedSeatForSwap.row === trainee.row;
+
+    const brigadeClass = getBrigadeStyle(trainee.note);
+    btn.id = `seat-${trainee.ech}-${trainee.col}-${trainee.row}`;
+    btn.dataset.ech = trainee.ech;
+    btn.dataset.col = trainee.col;
+    btn.dataset.row = trainee.row;
+    btn.dataset.type = 'grid';
+    
+    btn.className = `p-1 rounded border text-center min-h-[44px] transition ${isSelected ? 'selected-swap' : brigadeClass} border-slate-700/80 hover:border-emerald-500 flex flex-col items-center justify-center relative shadow-sm`;
+
+    btn.innerHTML = `
+        <span class="font-extrabold text-slate-100 text-[10.5px] leading-tight">${trainee.name || ''}</span>
+        ${trainee.note ? `<span class="text-[7.5px] font-bold text-amber-200 bg-black/40 px-1 rounded block leading-tight mt-0.5 max-w-[62px] truncate">${trainee.note}</span>` : ''}
+    `;
+
+    if (isDragMode) {
+        btn.draggable = true;
+        btn.ondragstart = (e) => handleGridDragStart(e, trainee.ech, trainee.col, trainee.row);
+        btn.ondragover = (e) => handleDesktopDragOver(e, btn);
+        btn.ondragleave = () => btn.classList.remove('drag-over');
+        btn.ondrop = (e) => handleGridDrop(e, trainee.ech, trainee.col, trainee.row, btn);
+        bindMobileTouch(btn, trainee.ech, trainee.col, trainee.row);
+    } else {
+        btn.draggable = false;
+    }
+
+    btn.onclick = () => {
+        if (isDragMode) handleGridClickForSwap(trainee.ech, trainee.col, trainee.row);
+        else openDetailModalGrid(trainee);
+    };
+
+    return btn;
+}
+
+
         function bindMobileTouch(elem, ech, col, row) {
             elem.addEventListener("touchstart", function (e) {
                 if (!isDragMode) return;
