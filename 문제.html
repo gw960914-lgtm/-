@@ -1,0 +1,1710 @@
+아이폰 사파리 및 카카오톡 인앱 브라우저의 보안 환경에서 외부 Tailwind CDN 스크립트 실행이 지연·차단되어, CSS 스타일과 .hidden(화면 숨김) 속성이 적용되지 않아 모든 탭이 한 화면에 겹쳐 출력되던 현상입니다.
+외부 CDN이 차단되더라도 깨짐 없이 동작하도록 순수 내장 CSS 엔진과 iOS 사파리 전용 폼/스크롤 최적화 스타일을 직접 내장한 수정본 코드입니다.
+수정된 전체 실행 파일 (index.html)
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>훈련부사관 소양평가 준비 문제은행</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <style>
+    @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+    
+    /* 기본 리셋 및 폰트 */
+    * { box-sizing: border-box; font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif; }
+    body { margin: 0; padding: 0; background-color: #f1f5f9; color: #1e293b; -webkit-tap-highlight-color: transparent; }
+    
+    /* 아이폰 사파리 렌더링 및 숨김 속성 강제 보정 */
+    .hidden { display: none !important; }
+    
+    /* iOS 기본 폼 스타일 초기화 및 확대 방지 */
+    input, select, textarea, button {
+      font-size: 14px;
+      -webkit-appearance: none;
+      -moz-appearance: none;
+      appearance: none;
+    }
+    input[type="radio"], input[type="checkbox"] {
+      -webkit-appearance: auto;
+      appearance: auto;
+    }
+    select {
+      background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+      background-repeat: no-repeat;
+      background-position: right 8px center;
+      background-size: 16px;
+      padding-right: 28px !important;
+    }
+
+    /* 탭 활성화 스타일 */
+    .tab-active {
+      border-bottom: 3px solid #2563eb !important;
+      color: #2563eb !important;
+      font-weight: 700 !important;
+    }
+
+    /* 수정 후 하이라이트 애니메이션 */
+    @keyframes editHighlight {
+      0% { background-color: #eff6ff; box-shadow: 0 0 0 2px #3b82f6; }
+      100% { background-color: #ffffff; box-shadow: 0 0 0 0 transparent; }
+    }
+    .highlight-card {
+      animation: editHighlight 2s ease-out forwards;
+    }
+  </style>
+</head>
+<body class="bg-slate-100 text-slate-800 min-h-screen flex flex-col">
+
+  <!-- 상단 네비게이션 헤더 -->
+  <header class="bg-slate-900 text-white sticky top-0 z-50 shadow-md">
+    <div class="max-w-6xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-2">
+      <div class="flex items-center space-x-2">
+        <i class="fa-solid fa-shield-halved text-blue-400 text-xl"></i>
+        <div>
+          <h1 class="text-base sm:text-lg font-bold tracking-tight">훈련부사관 소양평가 준비 문제은행</h1>
+          <p class="text-[11px] text-slate-400">6개 과목 종합 모의고사 & 스마트 오답노트</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-2 text-xs bg-slate-800 px-2.5 py-1 rounded-lg border border-slate-700">
+        <span class="text-slate-400">등록 과목:</span>
+        <span id="headerSubjectCount" class="font-bold text-blue-400">6개</span>
+        <span class="text-slate-600">|</span>
+        <span class="text-slate-400">총 문항:</span>
+        <span id="headerQuestionCount" class="font-bold text-emerald-400">384문항</span>
+      </div>
+    </div>
+
+    <!-- 탭 메뉴 -->
+    <div class="bg-white border-b border-slate-200 text-slate-600">
+      <div class="max-w-6xl mx-auto px-3 flex overflow-x-auto space-x-1 text-xs sm:text-sm font-medium">
+        <button onclick="switchTab('study')" id="tab-study" class="py-2.5 px-3 tab-active flex items-center gap-1.5 whitespace-nowrap">
+          <i class="fa-solid fa-book-open"></i> 유형별 학습
+        </button>
+        <button onclick="switchTab('exam')" id="tab-exam" class="py-2.5 px-3 flex items-center gap-1.5 whitespace-nowrap">
+          <i class="fa-solid fa-bullseye text-red-500"></i> 맞춤/랜덤 모의고사
+        </button>
+        <button onclick="switchTab('wrong')" id="tab-wrong" class="py-2.5 px-3 flex items-center gap-1.5 whitespace-nowrap">
+          <i class="fa-solid fa-triangle-exclamation text-amber-500"></i> 오답노트
+          <span id="wrongBadge" class="ml-1 px-1.5 py-0.2 text-[10px] rounded-full bg-red-100 text-red-600 font-bold hidden">0</span>
+        </button>
+        <button onclick="switchTab('ocr')" id="tab-ocr" class="py-2.5 px-3 flex items-center gap-1.5 whitespace-nowrap">
+          <i class="fa-solid fa-camera text-blue-500"></i> AI 사진 추출
+        </button>
+        <button onclick="switchTab('manage')" id="tab-manage" class="py-2.5 px-3 flex items-center gap-1.5 whitespace-nowrap">
+          <i class="fa-solid fa-sliders"></i> 과목/수동 관리
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- 메인 컨텐츠 영역 -->
+  <main class="max-w-6xl mx-auto px-3 py-4 sm:py-6 flex-1 w-full">
+
+    <!-- 1. 유형별 학습 탭 -->
+    <section id="view-study" class="space-y-4">
+      <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-wrap gap-3 items-center justify-between">
+        <div class="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+          <div>
+            <label class="text-[11px] font-semibold text-slate-500 block mb-1">학습 과목 선택</label>
+            <select id="studySubjectSelect" onchange="renderStudyQuestions()" class="border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs bg-slate-50 font-semibold focus:ring-2 focus:ring-blue-500 outline-none"></select>
+          </div>
+          <div>
+            <label class="text-[11px] font-semibold text-slate-500 block mb-1">유형 선택</label>
+            <select id="studyTypeSelect" onchange="renderStudyQuestions()" class="border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs bg-slate-50 font-semibold focus:ring-2 focus:ring-blue-500 outline-none">
+              <option value="all">전체 유형</option>
+              <option value="ox">진위형 (OX)</option>
+              <option value="fill">빈칸·단답형</option>
+              <option value="desc">기술형·서술형</option>
+            </select>
+          </div>
+        </div>
+        <div class="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-end pt-1 sm:pt-0">
+          <button onclick="shuffleStudyQuestions()" class="px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded-lg text-xs font-bold flex items-center gap-1">
+            <i class="fa-solid fa-shuffle"></i> 무작위 섞기
+          </button>
+          <span class="text-xs text-slate-500">
+            문항수: <span id="studyFilteredCount" class="font-bold text-blue-600">0</span>개
+          </span>
+        </div>
+      </div>
+      <div id="studyQuestionList" class="space-y-3.5"></div>
+    </section>
+
+    <!-- 2. 맞춤/랜덤 모의고사 탭 -->
+    <section id="view-exam" class="hidden space-y-5">
+      <div id="examConfigCard" class="bg-white p-5 sm:p-6 rounded-xl shadow-sm border border-slate-200 max-w-2xl mx-auto space-y-4">
+        <div class="border-b border-slate-100 pb-3">
+          <h2 class="text-base sm:text-lg font-bold text-slate-900 flex items-center gap-2">
+            <i class="fa-solid fa-gear text-blue-600"></i> 모의고사 출제 설정
+          </h2>
+          <p class="text-xs text-slate-500 mt-0.5">과목별 맞춤 지정 또는 전 과목 무작위 랜덤 시험을 시작합니다.</p>
+        </div>
+
+        <!-- 전과목 랜덤 시험 프리셋 박스 -->
+        <div class="bg-gradient-to-r from-indigo-50 to-blue-50 p-4 rounded-xl border border-indigo-100 space-y-2">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold text-indigo-900 flex items-center gap-1.5">
+              <i class="fa-solid fa-dice text-indigo-600"></i> 전 과목 무작위 랜덤 퀵 스타트
+            </span>
+            <span class="text-[10px] text-indigo-700 bg-white px-2 py-0.5 rounded-full border border-indigo-200 font-semibold">실전 훈련</span>
+          </div>
+          <p class="text-xs text-slate-600 leading-relaxed">전체 6개 과목(384문항)에서 OX, 단답형, 기술형 문제를 골고루 무작위 추출하여 출제합니다.</p>
+          <div class="flex flex-wrap gap-2 pt-1">
+            <button onclick="startQuickRandomExam(20)" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-bold shadow-sm">
+              <i class="fa-solid fa-bolt mr-1"></i> 랜덤 20제
+            </button>
+            <button onclick="startQuickRandomExam(40)" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold shadow-sm">
+              <i class="fa-solid fa-bolt mr-1"></i> 랜덤 40제
+            </button>
+            <button onclick="startQuickRandomExam(64)" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-900 text-white rounded-lg text-xs font-bold shadow-sm">
+              <i class="fa-solid fa-crown mr-1 text-amber-400"></i> 실전형 64제
+            </button>
+          </div>
+        </div>
+
+        <div>
+          <label class="text-xs font-semibold text-slate-700 block mb-1">시험 과목 선택</label>
+          <select id="examSubjectSelect" onchange="updateExamConfigLimits()" class="w-full border border-slate-300 rounded-lg p-2.5 text-xs bg-slate-50 font-semibold focus:ring-2 focus:ring-blue-500 outline-none"></select>
+        </div>
+
+        <div class="bg-slate-50 p-3.5 rounded-lg border border-slate-200 space-y-2.5">
+          <label class="text-[11px] font-bold text-slate-600 uppercase tracking-wider block">선택 과목 내 유형별 문항 수 지정</label>
+          
+          <div class="flex items-center justify-between gap-4">
+            <span class="text-xs font-medium text-slate-700">진위형 (OX)</span>
+            <div class="flex items-center gap-1.5">
+              <input type="number" id="examOxCount" min="0" value="10" oninput="calcExamTotal()" class="w-16 border border-slate-300 rounded p-1 text-center font-bold text-xs bg-white" />
+              <span class="text-[11px] text-slate-400">/ <span id="maxOxCount">0</span>문항</span>
+            </div>
+          </div>
+
+          <div class="flex items-center justify-between gap-4">
+            <span class="text-xs font-medium text-slate-700">빈칸·단답형</span>
+            <div class="flex items-center gap-1.5">
+              <input type="number" id="examFillCount" min="0" value="10" oninput="calcExamTotal()" class="w-16 border border-slate-300 rounded p-1 text-center font-bold text-xs bg-white" />
+              <span class="text-[11px] text-slate-400">/ <span id="maxFillCount">0</span>문항</span>
+            </div>
+          </div>
+
+          <div class="flex items-center justify-between gap-4">
+            <span class="text-xs font-medium text-slate-700">기술형·서술형</span>
+            <div class="flex items-center gap-1.5">
+              <input type="number" id="examDescCount" min="0" value="4" oninput="calcExamTotal()" class="w-16 border border-slate-300 rounded p-1 text-center font-bold text-xs bg-white" />
+              <span class="text-[11px] text-slate-400">/ <span id="maxDescCount">0</span>문항</span>
+            </div>
+          </div>
+
+          <div class="pt-1 flex flex-wrap gap-1.5">
+            <button onclick="setExamPreset(5, 5, 2)" class="px-2 py-1 text-[11px] bg-white border border-slate-300 rounded text-slate-600 font-medium">약식 (12제)</button>
+            <button onclick="setExamPreset(12, 12, 8)" class="px-2 py-1 text-[11px] bg-white border border-slate-300 rounded text-slate-600 font-medium">표준 (32제)</button>
+            <button onclick="setExamPreset('max','max','max')" class="px-2 py-1 text-[11px] bg-blue-50 border border-blue-200 rounded text-blue-600 font-medium">과목 전체</button>
+          </div>
+        </div>
+
+        <div class="bg-blue-50 border border-blue-100 p-3.5 rounded-lg flex items-center justify-between">
+          <div>
+            <span class="text-[11px] text-blue-700 font-semibold block">총 출제 예정 문항 수</span>
+            <span id="examTotalDisplay" class="text-xl font-black text-blue-900">24문항</span>
+          </div>
+          <button onclick="startExam()" class="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold text-xs shadow-md">
+            <i class="fa-solid fa-play mr-1"></i> 시험 시작
+          </button>
+        </div>
+      </div>
+
+      <!-- 모의고사 시험 응시 창 -->
+      <div id="examPaperCard" class="hidden space-y-4">
+        <div class="bg-white p-3.5 rounded-xl shadow-sm border border-slate-200 flex items-center justify-between sticky top-14 z-40">
+          <div>
+            <span id="examSubjectBadge" class="px-2 py-0.5 rounded text-xs font-bold bg-slate-900 text-white">과목명</span>
+            <span id="examProgressBadge" class="ml-1.5 text-xs font-semibold text-slate-500">총 0문항</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <button onclick="cancelExam()" class="text-xs text-slate-400 hover:text-red-600 font-medium px-2 py-1">취소</button>
+            <button onclick="finishExam()" class="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg shadow">
+              <i class="fa-solid fa-check-double mr-1"></i> 제출 및 채점
+            </button>
+          </div>
+        </div>
+
+        <div id="examQuestionsContainer" class="space-y-3.5"></div>
+      </div>
+
+      <!-- 모의고사 성적 결과 모달 -->
+      <div id="examResultCard" class="hidden bg-white p-6 rounded-xl shadow-sm border border-slate-200 max-w-2xl mx-auto space-y-4">
+        <div class="text-center py-3 border-b border-slate-100">
+          <span class="inline-block p-2.5 bg-blue-50 rounded-full text-blue-600 mb-1.5">
+            <i class="fa-solid fa-award text-2xl"></i>
+          </span>
+          <h3 class="text-lg font-bold text-slate-900">모의고사 채점 결과</h3>
+          <p id="examScoreRate" class="text-3xl font-black text-blue-600 mt-1">0점 / 100점</p>
+          <p id="examScoreDetail" class="text-xs text-slate-500 mt-0.5">총 0문항 중 0문항 정답</p>
+        </div>
+
+        <div class="space-y-2">
+          <p class="text-xs text-slate-600 bg-slate-50 p-3 rounded-lg leading-relaxed">
+            • <b>진위형/단답형</b> 오답은 <b>🚨 오답노트</b>에 자동 등록되었습니다.<br/>
+            • <b>기술형(서술형)</b>은 하단 문제지에서 모범 답안과 비교하여 자가 채점해 보세요.
+          </p>
+        </div>
+
+        <div class="flex gap-2 justify-center pt-2">
+          <button onclick="restartExamConfig()" class="px-4 py-2 bg-slate-800 text-white rounded-lg text-xs font-bold">새 시험 구성</button>
+          <button onclick="switchTab('wrong')" class="px-4 py-2 bg-amber-500 text-white rounded-lg text-xs font-bold">오답노트 확인</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. 오답노트 탭 -->
+    <section id="view-wrong" class="hidden space-y-4">
+      <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex flex-wrap gap-2 items-center justify-between">
+        <div>
+          <h2 class="text-sm sm:text-base font-bold text-slate-900 flex items-center gap-1.5">
+            <i class="fa-solid fa-triangle-exclamation text-amber-500"></i> 오답 관리 보관함
+          </h2>
+          <p class="text-xs text-slate-500">틀린 문제만 모아 무작위로 집중 복습합니다.</p>
+        </div>
+        <div class="flex items-center gap-2">
+          <button onclick="clearAllWrong()" class="px-2.5 py-1 text-xs text-red-600 border border-red-200 rounded-lg font-medium">전체 비우기</button>
+          <button onclick="startWrongExam()" class="px-3 py-1 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-xs font-bold shadow-sm">
+            <i class="fa-solid fa-bolt mr-1"></i> 오답 무작위 풀기
+          </button>
+        </div>
+      </div>
+      <div id="wrongListContainer" class="space-y-3.5"></div>
+    </section>
+
+    <!-- 4. AI 사진 문제 추출 탭 -->
+    <section id="view-ocr" class="hidden space-y-4">
+      <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 max-w-2xl mx-auto space-y-4">
+        <div class="border-b border-slate-100 pb-2.5">
+          <h2 class="text-base font-bold text-slate-900 flex items-center gap-1.5">
+            <i class="fa-solid fa-wand-magic-sparkles text-blue-600"></i> AI 다중 사진 자동 문제 추출
+          </h2>
+          <p class="text-xs text-slate-500 mt-0.5">스캔 시험지 사진을 올리면 문제, 정답, 해설을 자동 분석해 등록합니다.</p>
+        </div>
+
+        <div class="bg-slate-50 p-3.5 rounded-lg border border-slate-200 space-y-1.5">
+          <div class="flex items-center justify-between">
+            <label class="text-[11px] font-bold text-slate-700">Google Gemini API Key</label>
+            <a href="https://aistudio.google.com/app/apikey" target="_blank" class="text-[11px] text-blue-600 hover:underline">무료 키 발급 ➔</a>
+          </div>
+          <div class="flex gap-1.5">
+            <input type="password" id="geminiApiKey" placeholder="API 키 붙여넣기" class="flex-1 border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs bg-white outline-none" />
+            <button onclick="saveApiKey()" class="px-3 py-1.5 bg-slate-800 text-white text-xs font-bold rounded-lg whitespace-nowrap">저장</button>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+          <div>
+            <label class="text-[11px] font-semibold text-slate-600 block mb-1">저장할 과목 선택</label>
+            <select id="ocrTargetSubject" class="w-full border border-slate-300 rounded-lg p-2 text-xs bg-slate-50 font-medium"></select>
+          </div>
+          <div>
+            <label class="text-[11px] font-semibold text-slate-600 block mb-1">새 과목 생성 시 이름</label>
+            <input type="text" id="ocrNewSubjectName" placeholder="새 과목명 입력" class="w-full border border-slate-300 rounded-lg p-2 text-xs bg-white outline-none" />
+          </div>
+        </div>
+
+        <div class="border-2 border-dashed border-slate-300 rounded-xl p-5 text-center cursor-pointer hover:bg-slate-50" onclick="document.getElementById('ocrFileInput').click()">
+          <i class="fa-solid fa-cloud-arrow-up text-2xl text-slate-400 mb-1"></i>
+          <p class="text-xs font-bold text-slate-700">사진 선택 (여러 장 다중 선택 가능)</p>
+          <p class="text-[10px] text-slate-400 mt-0.5">JPG, PNG 파일 지원</p>
+          <input type="file" id="ocrFileInput" multiple accept="image/*" class="hidden" onchange="handleOcrFiles(event)" />
+        </div>
+
+        <div id="ocrProgressCard" class="hidden space-y-1.5 bg-blue-50 p-3 rounded-lg border border-blue-100">
+          <div class="flex justify-between text-xs font-bold text-blue-900">
+            <span id="ocrProgressStatus">사진 분석 중...</span>
+            <span id="ocrProgressPercent">0%</span>
+          </div>
+          <div class="w-full bg-blue-200 rounded-full h-1.5">
+            <div id="ocrProgressBar" class="bg-blue-600 h-1.5 rounded-full transition-all duration-300" style="width: 0%"></div>
+          </div>
+        </div>
+
+        <button onclick="runBatchOcr()" id="btnStartOcr" class="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold text-xs shadow transition">
+          <i class="fa-solid fa-bolt mr-1"></i> 사진 분석 및 대량 문제 추출 시작
+        </button>
+      </div>
+    </section>
+
+    <!-- 5. 과목 및 수동 관리 탭 -->
+    <section id="view-manage" class="hidden space-y-4">
+      <div class="bg-white p-4 sm:p-5 rounded-xl shadow-sm border border-slate-200 space-y-4">
+        <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-2.5">
+          <div>
+            <h2 class="text-base font-bold text-slate-900 flex items-center gap-1.5">
+              <i class="fa-solid fa-database text-blue-600"></i> 데이터 백업 및 공유
+            </h2>
+            <p class="text-xs text-slate-500">전체 문제 데이터를 JSON 파일로 내보내거나 복사합니다.</p>
+          </div>
+          <div class="flex flex-wrap gap-1.5">
+            <button onclick="exportJsonFile()" class="px-2.5 py-1.5 bg-slate-800 text-white rounded-lg text-xs font-bold">
+              <i class="fa-solid fa-download mr-1"></i> 파일 다운로드
+            </button>
+            <button onclick="openJsonModal('export')" class="px-2.5 py-1.5 bg-blue-600 text-white rounded-lg text-xs font-bold">
+              <i class="fa-solid fa-copy mr-1"></i> 텍스트 복사
+            </button>
+            <button onclick="openJsonModal('import')" class="px-2.5 py-1.5 bg-emerald-600 text-white rounded-lg text-xs font-bold">
+              <i class="fa-solid fa-file-import mr-1"></i> 붙여넣기 불러오기
+            </button>
+            <button onclick="resetToInitialData()" class="px-2.5 py-1.5 bg-red-50 text-red-600 border border-red-200 rounded-lg text-xs font-bold">
+              초기화
+            </button>
+          </div>
+        </div>
+
+        <div class="space-y-2.5">
+          <div class="flex items-center justify-between">
+            <h3 class="text-xs font-bold text-slate-800">과목별 문항 현황</h3>
+            <div class="flex gap-1.5">
+              <input type="text" id="newSubjectInput" placeholder="새 과목명" class="border border-slate-300 rounded px-2 py-1 text-xs bg-slate-50" />
+              <button onclick="addNewSubject()" class="px-2.5 py-1 bg-slate-800 text-white text-xs font-bold rounded">+ 과목 추가</button>
+            </div>
+          </div>
+          <div id="subjectManageTableContainer" class="overflow-x-auto"></div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- 문제 수정 및 오탈자 정정 모달 -->
+  <div id="editQuestionModal" class="hidden fixed inset-0 bg-slate-900/60 z-50 flex items-center justify-center p-3">
+    <div class="bg-white rounded-xl max-w-lg w-full p-4 space-y-3 shadow-2xl">
+      <div class="flex justify-between items-center border-b pb-2">
+        <h3 class="text-xs font-bold text-slate-800 flex items-center gap-1">
+          <i class="fa-solid fa-pen-to-square text-blue-600"></i> 문제 및 오탈자 수정
+        </h3>
+        <button onclick="closeEditModal()" class="text-slate-400 hover:text-slate-600 text-sm"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+
+      <input type="hidden" id="editSubj" />
+      <input type="hidden" id="editType" />
+      <input type="hidden" id="editQId" />
+
+      <div class="space-y-2 text-xs">
+        <div>
+          <label class="font-bold text-slate-700 block mb-1">문제 지문</label>
+          <textarea id="editQuestionText" rows="3" class="w-full border border-slate-300 rounded-lg p-2 bg-slate-50 outline-none focus:ring-2 focus:ring-blue-500 font-medium"></textarea>
+        </div>
+        <div>
+          <label class="font-bold text-slate-700 block mb-1">정답</label>
+          <textarea id="editAnswerText" rows="2" class="w-full border border-slate-300 rounded-lg p-2 bg-slate-50 outline-none focus:ring-2 focus:ring-blue-500 font-medium"></textarea>
+        </div>
+        <div>
+          <label class="font-bold text-slate-700 block mb-1">해설 / 오답 이유 (선택)</label>
+          <textarea id="editExplanationText" rows="2" class="w-full border border-slate-300 rounded-lg p-2 bg-slate-50 outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+        </div>
+      </div>
+
+      <div class="flex justify-end gap-1.5 pt-2 border-t border-slate-100">
+        <button onclick="closeEditModal()" class="px-3 py-1.5 bg-slate-200 text-slate-700 text-xs font-bold rounded-lg">취소</button>
+        <button onclick="saveQuestionEdit()" class="px-3.5 py-1.5 bg-blue-600 text-white text-xs font-bold rounded-lg shadow">
+          <i class="fa-solid fa-check mr-1"></i> 수정사항 저장
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 토스트 알림 컴포넌트 -->
+  <div id="toast" class="fixed bottom-5 right-5 z-50 transform translate-y-20 opacity-0 transition-all duration-300 bg-slate-900 text-white px-3.5 py-2 rounded-lg shadow-xl text-xs font-medium flex items-center gap-1.5"></div>
+
+  <!-- JSON 텍스트 복사/불러오기 모달 -->
+  <div id="jsonModal" class="hidden fixed inset-0 bg-slate-900/60 z-50 flex items-center justify-center p-3">
+    <div class="bg-white rounded-xl max-w-xl w-full p-4 space-y-3 shadow-2xl">
+      <div class="flex justify-between items-center border-b pb-2">
+        <h3 id="jsonModalTitle" class="text-xs font-bold text-slate-800">JSON 데이터</h3>
+        <button onclick="closeJsonModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <textarea id="jsonModalTextarea" rows="10" class="w-full border border-slate-300 rounded-lg p-2 text-[11px] font-mono bg-slate-50 outline-none"></textarea>
+      <div class="flex justify-end gap-1.5">
+        <button onclick="closeJsonModal()" class="px-3 py-1.5 bg-slate-200 text-slate-700 text-xs font-bold rounded-lg">닫기</button>
+        <button id="jsonModalActionBtn" class="px-3 py-1.5 bg-blue-600 text-white text-xs font-bold rounded-lg">확인</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /* ==========================================================================
+       1. 6개 과목 전수 기초 데이터 (총 384문항)
+       ========================================================================== */
+    const INITIAL_DATA = {
+      "제식": {
+        ox: [
+          { id: 1, question: "부대제식은 개인이 맨손 또는 총기를 특정한 상태에서 절도있고 통일되게 취하는 동작의 일정한 격식 및 방식이다.", answer: "X", explanation: "지문은 '개인제식'에 대한 설명이다." },
+          { id: 2, question: "구성단위는 개인 또는 일정한 규모의 부대를 구성하는 각 부대를 말하는 것으로 개인·분대·반·소대·중대 혹은 그보다 큰 구성부대를 말한다.", answer: "O", explanation: "참" },
+          { id: 3, question: "거리는 구성단위와 다른 구성단위 간 측면으로 떨어진 공간을 말한다.", answer: "X", explanation: "측면으로 떨어진 공간은 '간격'이며, '거리'는 앞·뒤 공간을 뜻한다." },
+          { id: 4, question: "폭은 세로로 선 각 구성단위를 포함한 대형의 선두 가슴부위부터 후미 등 까지의 길이를 말한다.", answer: "X", explanation: "선두 가슴부터 후미 등까지의 길이는 '종심'이다." },
+          { id: 5, question: "보폭은 행진하는 사람의 앞발 뒤꿈치에서 뒷발 뒤꿈치까지의 규정된 거리를 말한다.", answer: "O", explanation: "참" },
+          { id: 6, question: "\"차려\"는 개인에게 하달할 경우에 예령 없이 바로 동령으로 사용할 수 있다.", answer: "O", explanation: "참" },
+          { id: 7, question: "내려진 구령이 잘못되었거나 구령에 의한 동작을 변경할 경우 \"정정\"이라는 용어를 사용한 후 다시 구령을 내린다.", answer: "O", explanation: "참" },
+          { id: 8, question: "차려자세에서 멜빵총 휴대 시 '앞으로 메어' 자세에서는 왼손으로 멜빵 상단 모서리 부분을 감싸 쥔다.", answer: "X", explanation: "왼손으로 멜빵 '하단' 모서리 부분을 감싸 쥔다." },
+          { id: 9, question: "해체를 제외한 모든 일어서자세에서 차려를 시키기 위한 구령은 \"차려\"이다.", answer: "O", explanation: "참" },
+          { id: 10, question: "\"헤쳐\"라는 구령에 \"헤쳐\"라고 복명복창하고, 대오를 떠나 흩어지며, 반드시 차려자세에서 실시한다.", answer: "O", explanation: "참" },
+          { id: 11, question: "정지간의 모든 방향전환은 약 1초에 1동작의 속도로 행하며, 모든 동작은 차려자세에서 시작한다.", answer: "O", explanation: "참" },
+          { id: 12, question: "앉아자세는, 차려자세에서 지면이나 의자에 앉는 동작으로 무릎앉아, 자리에 앉아, 의자에 앉아 등이 있다.", answer: "O", explanation: "참" },
+          { id: 13, question: "앉은 상태에서 베레모, 방탄헬멧 등을 벗을 경우 \"탈모\", 착용할 경우 \"착모\" 구령을 실시한다.", answer: "X", explanation: "앉은 상태에서는 '모자벗어', '모자써' 구령을 사용한다." },
+          { id: 14, question: "빠른걸음이란 1분간에 120보의 보조로 행진하는 걸음이며, 보폭은 78~80cm이다.", answer: "O", explanation: "참" },
+          { id: 15, question: "정지에서 빠른걸음의 구령은 \"빠른걸음으로 가\"이다.", answer: "X", explanation: "정지 상태에서 빠른걸음의 구령은 '앞으로 가'이다." },
+          { id: 16, question: "걸음변경의 시기에서, 지휘자의 구령없이 각 개인이 실시할 수도 있다.", answer: "O", explanation: "참" },
+          { id: 17, question: "행진 간에 \"번호붙여 가\" 구령은 어느 발에 내려도 무방하다.", answer: "O", explanation: "참" },
+          { id: 18, question: "K2소총 총기휴대시 기본 휴대자세는 '세워총' 자세이다.", answer: "X", explanation: "K2소총의 기본 휴대자세는 '우로어깨걸어총'이다." },
+          { id: 19, question: "총기휴대시 앉아 자세에는 무릎 앉아, 자리에 앉아 자세가 있다.", answer: "X", explanation: "무릎 앉아, 제자리 앉아 자세가 있다." },
+          { id: 20, question: "허리에총에서 세워총 자세 요령은 2개 동작이 있으며, 제 1동작은 오른발을 펴 개머리판이 지면에서 3cm정도가 될 때까지 총을 내린다.", answer: "O", explanation: "참" },
+          { id: 21, question: "앞에총에서 받들어총의 동작은 1개동작으로, 총기를 쥠과 동시에 구호를 복창한다.", answer: "X", explanation: "2개 동작으로 이루어진다." },
+          { id: 22, question: "분대대형을 실시할 때, 기본적인 행동요령으로 분대행정은 분대의 중앙으로부터 6보 앞에 위치한다.", answer: "X", explanation: "분대장은 분대의 중앙 전방 '3보' 앞에 위치한다." },
+          { id: 23, question: "분대제식에서 집합의 구령은 \"집합\"이며, 부대를 명확하게 인식시키기 위해 \"0소대0분대 집합\"라고 할 수 있다.", answer: "X", explanation: "정식 구령은 '모여'이다." },
+          { id: 24, question: "'번호붙이기'에서, '우에서 좌로번호'간, 분대원은 정면을 향하고 있다가, 앞사람의 고개가 돌아온 것이 확인되면, 순번대로 번호를 붙인 후 기준병과 같이 고개를 들었다가 정면으로 되돌린다.", answer: "X", explanation: "지문은 '뒤로 번호'에 대한 설명이다." }
+        ],
+        fill: [
+          { id: 1, question: "부대거리는 (______)에서 뒤 부대의 맨 앞 요 사이를 말한다.", answer: "앞 부대의 맨 뒤 요" },
+          { id: 2, question: "제대의 실시요령에서 부대가 형성한 대형의 개인간 거리와 간격은 (______)하여야한다.", answer: "정확하게 유지" },
+          { id: 3, question: "간격은 구성단위와 다른 구성단위 간 (______)로 떨어진 공간을 말한다.", answer: "측면" },
+          { id: 4, question: "쉬어 자세에서는 (______)을 고정시키고 (______)발 상체를 가볍게 움직일 수 있으나 말은 할 수 없다.", answer: "오른발, 왼발 / 왼" },
+          { id: 5, question: "거수경례 자세에서 전방에서 보았을 때, 지면으로부터 (______)를 유지하고, 상박은 어깨 앞으로 (______)한다.", answer: "45°, 30~45° / 자연스럽게 유지" },
+          { id: 6, question: "뒤로돌아 동작에서 오른발을 지면을 스치듯이 직후방으로 빼서 왼발 뒤꿈치로부터 (______) 정도 지점에 위치시킨다.", answer: "반폭장" },
+          { id: 7, question: "무릎앉아 자세에서 \"앉아\" 구령에 (______)와 상체 및 양팔을 가볍게 움직일 수 있다.", answer: "오른다리" },
+          { id: 8, question: "바른걸음에서 걸음 수 한정 시 팔은 정확하게 (______).", answer: "흔든다" },
+          { id: 9, question: "뒷걸음 간 팔은 (______)와 동일하게 유지하고 고개를 돌려서는 안된다.", answer: "차려자세" },
+          { id: 10, question: "큰걸음이란 1분간에 (______)보의 보조로 행진하는 걸음으로, 보폭은 (______)km 이상이다.", answer: "120, 81cm / 1" },
+          { id: 11, question: "정지에서 뜀걸음 의 요령으로, \"뛰어\"라는 예령에 양손은 주먹을 쥔 채 상박과 하박이 (______)을 이루도록 전방으로 올린다.", answer: "60°" },
+          { id: 12, question: "총기휴대제식에서 동작전환의 속도는 1초에 2개 동작을 실시하는 속도인 (______) 동작을 유지한다.", answer: "1초간에 1개" },
+          { id: 13, question: "검사총 제 6동작으로 총을 시계방향으로 (______)돌려 탄알집꽂이홈이 오른쪽을 향하게 하여 장전손잡이가 눈앞에 오도록 몸의 중앙으로 들어올려 약실을 검사한다.", answer: "90°" },
+          { id: 14, question: "멜빵 늘이기 제 4동작에 멜빵이 왼발 안으로 들어오도록 하고, 왼손으로 멜빵과 덮개를 함께 (______).", answer: "잡아서는 안 된다" },
+          { id: 15, question: "총기휴대시 경례에서 거수경례는 '우·좌로 어깨총', '우·좌로어깨걸어총', '비껴걸어총', '비껴들어총', '비껴접어 허리총', (______) 시에 실시한다.", answer: "우·좌 내려총" },
+          { id: 16, question: "걸어총은 필요시 휴대하고 있던 소총을 결착정연하게 세워놓는 동작으로 최소 (______)가 되어 실시한다.", answer: "3명이 1개 조" },
+          { id: 17, question: "분대 제식에서 해산이란, 집합한 상태에서 단체행동을 종료하고 각 개인별 행동을 이용하는 방법이며, 구령은 (______)이다.", answer: "헤쳐" },
+          { id: 18, question: "행진간 방향전환 시 기준은 뒤에 있는 인원이 방향을 전환하는 시간을 고려하여 행진속도를 (______).", answer: "더 줄일 수 있다" },
+          { id: 19, question: "헤쳐모여는 부대가 갖추고 있는 지금의 대형을 (______)의 대형으로 변경하는 방법이다.", answer: "전혀 다른 형태" },
+          { id: 20, question: "분대제식에서 '정열'은 현재 분대가 갖추고 있는 대형 안에서 (______)를 지휘자가 원하는 형태로 변경하는 방법이다.", answer: "개인의 간격과 거리" },
+          { id: 21, question: "밀집대형은 중대급 이상의 단위부대가 종대 또는 횡대대형에서 (______)없이 정렬한 대형이다.", answer: "간격 및 거리 구분" },
+          { id: 22, question: "(______) 구령에 선두 인원부터 순차적으로 무릎앉아 자세를 취함과 동시에 번호를 붙인다.", answer: "앉으면서 번호" },
+          { id: 23, question: "행진간 방향전환에서 분대장의 위치는 통상 분대의 (______) 약 2/3지점이다.", answer: "좌측에 선두로부터" },
+          { id: 24, question: "구성원들이 번호를 붙이는 과정에서 행동이 잘못되었거나, 번호를 다시 실시할 필요가 있을 경우 지휘자는 (______)라고 구령을 하달한다.", answer: "번호 다시" }
+        ],
+        desc: [
+          { id: 1, question: "목례의 사용시기 및 실시 요령에 대해 기술하시오.", answer: "사용시기: 두손에 물건을 들고 있거나 기타 사정으로 경례가 곤란한 자세에 있을 때 실시. 실시요령: 상체를 앞으로 30도 굽히며 시선은 자연스럽게 내려다본다. 경례구호는 생략한다." },
+          { id: 2, question: "상관이 생활관, 휴식장소에 방문 시 경례 요령에 대해 기술하시오.", answer: "선임자 또는 먼저 발견한 자의 '쉬어' 구령으로 쉬어자세를 취하고, 최상급자만 경례 및 보고한다. 상관의 답례 후 원자세로 복귀한다." },
+          { id: 3, question: "'기준'에 대해 기술하시오.", answer: "기준은 부대가 정렬하거나 대형을 갖출 때 표본이 되는 사람을 말하며, 왼팔을 위로 수직으로 올리고 '기준' 외친 후 정렬 완료 시 차려자세로 복귀한다." },
+          { id: 4, question: "제식의 목적에 대해 기술하시오.", answer: "지휘자의 명령에 조건반사적인 복종을 습성화하고 단결심과 협동심을 고양시켜 군인기본자세를 확립하며 궁극적으로 전투력을 향상시킨다." },
+          { id: 5, question: "보폭에 대해 기술하시오.", answer: "행진하는 사람의 앞발 뒤꿈치에서 뒷발 뒤꿈치까지의 거리이며 바른걸음의 경우 통상 78~80cm 거리를 유지한다." },
+          { id: 6, question: "거수경례의 유의사항에 대해 기술하시오.", answer: "차려자세에서만 실시하며 수례자의 눈을 향한다. 베레모/활동모 착용 시 오른쪽 눈썹 끝부분에 손가락 끝을 위치시킨다." },
+          { id: 7, question: "바른걸음시 유의사항에 대해 기술하시오.", answer: "발을 곧게 디디며 팔자걸음을 걷지 않고, 시선은 정면, 양팔은 옆구리를 스치듯 흔들며 수평을 유지한다." },
+          { id: 8, question: "정지에서 우(좌) 옆걸음의 행동요령을 기술하시오.", answer: "제1동작으로 오른(왼)발을 옆으로 30cm 곧게 벌리고 제2동작으로 반대 발을 붙인다. 이동 간 고개는 이동방향을 주시한다." },
+          { id: 9, question: "걸음 변경의 시기를 기술하시오.", answer: "대열 안의 개인 또는 부대 전체가 다른 발을 맞추기 위해 사용하며 2보 행진 구간을 3보로 이동하여 발을 일치시킨다." },
+          { id: 10, question: "K2소총 휴대제식의 기본행동요령을 기술하시오.", answer: "기본 휴대자세는 우로어깨걸어총이며 모든 제식동작은 세워총에서 시작한다. 전환 속도는 1초간에 1개 동작을 유지한다." },
+          { id: 11, question: "총기휴대시 경례 시기와 방법에 대해 기술하시오.", answer: "세워총, 허리에총, 앞에총 시에는 '받들어총'을 실시하고 어깨총, 어깨걸어총, 비껴걸어총 등에서는 '거수경례'를 실시한다." },
+          { id: 12, question: "번호 붙이기의 시기와 방법에 대해 기술하시오.", answer: "분대원 인원 파악 및 순번 인식을 위한 것으로 차려자세 또는 앉으면서 번호로 실시하며 뒤로 번호, 앉으면서 번호 등이 있다." },
+          { id: 13, question: "분대제식에서 '정열'의 방법 및 구령에 대해 기술하시오.", answer: "대형 안에서 개인의 간격과 거리를 조정하는 방법으로 '00간격 우로 나란히', '00간격 좌로 나란히', '00간격 좌우로 나란히' 구령을 쓴다." },
+          { id: 14, question: "군가창 요령을 기술하시오. (군가: 전우 / 요령: 힘차게)", answer: "구령 순서: ① 지금부터 군가를 실시한다 ② 군가 시작, 하나, 둘, 셋, 넷 ③ 군가는 전우 ④ 군가 준비 ⑤ 요령은 힘차게 ⑥ 반동 그만 ⑦ 반동시작, 하나, 둘, 셋, 넷 ⑧ 부대 차려" },
+          { id: 15, question: "군대예절 중 보행중의 경례에 대해 기술하시오.", answer: "실외 보행 중 상급자를 만나면 약 6보 전에서 계속 보행하며 경례한다. 앞질러 갈 때는 좌측으로 나가 양해를 구한 후 이동한다." },
+          { id: 16, question: "정지에서 행진시 군가 구령방법에 대해 기술하시오.", answer: "① 행진과 동시에 군가를 실시한다 ② 군가는 000 ③ 요령은 000 ④ 앞으로(뛰어) 가 / 행진 간 군가는 군가시작 하나 둘 셋 넷 구령을 사용한다." }
+        ]
+      },
+      "화생방": {
+        ox: [
+          { id: 1, question: "핵 및 화생방 방호에 영향을 미치는 지형 요소에는 지형 기복, 도시, 산림 등이 있다.", answer: "O", explanation: "참" },
+          { id: 2, question: "화학작용제는 기온이 높을수록 증발량이 감소하여 높은 살상농도를 형성하나 지속시간은 감소한다.", answer: "X", explanation: "기온이 높을수록 증발량이 '증가'한다." },
+          { id: 3, question: "핵무기는 핵반응의 종류에 따라 핵분열폭탄, 핵융합폭탄, 양성자폭탄으로 구분된다.", answer: "X", explanation: "핵반응 종류에 따라 핵분열폭탄, 핵융합폭탄, '중성자폭탄'으로 구분된다." },
+          { id: 4, question: "핵폭발 초기효과는 폭발 후 1분 이내에 발생하는 폭풍, 열복사선, 초기핵방사선 및 전자기펄스로 나타난다.", answer: "O", explanation: "참" },
+          { id: 5, question: "핵방사선은 핵분열 또는 핵융합 과정에서 방출되는 입자나 전자기펄스 형태의 에너지로 초기핵방사선, 후속핵방사선으로 구별된다.", answer: "O", explanation: "참" },
+          { id: 6, question: "중성자와 베타선은 투과력이 높고 폭발력에 따라 그 영향범위가 수 km까지 달하여 초기핵방사선 효과의 대부분을 차지한다.", answer: "X", explanation: "초기핵방사선 효과의 대부분은 중성자와 '감마선'이다." },
+          { id: 7, question: "초기핵방사선은 폭풍이나 열복사선과 같이 핵무기의 위력이 증가하면 영향 범위가 심하게 증가한다.", answer: "X", explanation: "초기핵방사선은 위력이 증가해도 범위가 심하게 증가하지 않는다." },
+          { id: 8, question: "방사능낙진은 표면 폭발이나 표학 폭발 시에 형성되고, 고공폭발 시에는 무기 위력에 따라 제한적으로 발생 할 수 있다.", answer: "X", explanation: "표면 폭발이나 '지공폭발' 시에 주로 형성된다." },
+          { id: 9, question: "화학작용제는 생리학적 현상에 따라 신경, 수포, 질식, 혈액, 무능화작용제 등으로 구분한다.", answer: "O", explanation: "참" },
+          { id: 10, question: "신경작용제는 피부를 통해 침투 시에도 치명적이다. 신경작용제는 G계열, V계열, 노비촉으로 구분한다.", answer: "O", explanation: "참" },
+          { id: 11, question: "혈액작용제는 호흡기를 통해 체내로 침투하여 폐에서 수분과 반응하여 이산화탄소와 염화수소를 발생시킨다.", answer: "X", explanation: "지문은 '질식작용제'에 대한 설명이다." },
+          { id: 12, question: "질식작용제는 호흡기를 통해 체내로 침투하여 혈액의 산소 운반을 방해한다.", answer: "X", explanation: "산소 운반을 방해하는 것은 '혈액작용제'이다." },
+          { id: 13, question: "무능화작용제는 호흡기를 경유해서 체내로 침투하여 인체의 생리적 기능을 무능화시키며, 효과는 수 시간에서 수일까지 지속된다.", answer: "O", explanation: "참" },
+          { id: 14, question: "생물학작용제는 사람이나 동·식물에 질병이나 사망을 유발하게 하는 미생물과 생물로부터 추출한 독소를 의미한다.", answer: "O", explanation: "참" },
+          { id: 15, question: "생물학작용제 사용시 최초 감염 후 즉각 증상이 발현되고 전염이 급속히 증가할 수 있으므로 사회에 미치는 혼란과 공포가 매우 크다.", answer: "X", explanation: "잠복기가 존재하여 즉각 발현되지 않는다." },
+          { id: 16, question: "방사능무기에는 방사성물질살포장치와 방사선노출장치, 그리고 급조핵장치가 있다.", answer: "O", explanation: "참" },
+          { id: 17, question: "더티밤은 핵분열 연쇄반응을 통해 거대한 에너지를 발생시켜 대량살상을 일으킨다.", answer: "X", explanation: "핵분열 연쇄반응은 '핵무기'에 대한 설명이다." },
+          { id: 18, question: "K5 방독면은 호흡성능과 착용감을 개선하여 전투효율이 향상되었으며 K1 방독면보다 방호시간이 더 길다.", answer: "X", explanation: "K1에 비해 방호시간이 비교적 짧다." },
+          { id: 19, question: "방독면과 보호의 착용은 해 상황하에서 방사성물질의 흡입과 피부접촉을 방지하고 방사선물질이 방출하는 방사선을 차폐할 수 있다.", answer: "X", explanation: "투과성 방사선 자체를 차폐하지는 못한다." },
+          { id: 20, question: "임무형보호태세는 준비단계, 1단계, 2단계, 3단계, 4단계, A단계가 있다.", answer: "X", explanation: "준비단계, 0단계, 1단계, 2단계, 3단계, 4단계, A단계 등으로 구분된다." },
+          { id: 21, question: "임무형보호태세 1단계는 적의 핵 및 화생방 공격이 예상되거나 화생방경계경보 발생 시 적용한다.", answer: "O", explanation: "참" },
+          { id: 22, question: "임무형보호태세 2단계는 화생방보호의에 추가적으로 전투화덮개를 적용한다.", answer: "O", explanation: "참" },
+          { id: 23, question: "임무형보호태세 3단계는 적의 핵 및 화생방 공격이 확인되었거나 화생방경계경보 발생 시 적용한다.", answer: "X", explanation: "적 공격 확인 또는 '화생방경보' 발령 시 적용한다." },
+          { id: 24, question: "임무형보호태세 'A단계'는 방독면 착용을 통하여 방사능낙진 및 화생작용제가 호흡기를 통해 인체내부로 흡입되는 것을 방지하기 위하여 신속하게 방독면을 착용시 적용한다.", answer: "O", explanation: "참" }
+        ],
+        fill: [
+          { id: 1, question: "탄도미사일 공습경보 발령 시는 (______)이하를 적용해야 한다.", answer: "MOPP 2단계" },
+          { id: 2, question: "핵 공격 상황에서 가장 효과적인 보호방법은 (______) 등 보호시설을 이용하는 것이다.", answer: "건물지하" },
+          { id: 3, question: "탄도미사일 공습경보 전파 시 피해 방지를 위해 구축된 (______) 시설을 이용해 대피한다.", answer: "전투진지 및 건물" },
+          { id: 4, question: "핵무기 폭발 시 섬광을 인지한 즉시 얼굴을 (______)으로 신속하게 엎드려야 한다.", answer: "지면 방향" },
+          { id: 5, question: "(______)내로 대피하는 것만으로도 폭풍, 열복사선, 초기핵방사선에 대해 보호를 받는다.", answer: "개인 전투진지" },
+          { id: 6, question: "핵 공격 이후에도 지속적인 보호조치를 위해 가능한 (______)를 적용한다.", answer: "MOPP 4단계" },
+          { id: 7, question: "방사능낙진 제거 및 보호장비 교체 후 주변 흙을 긁어 (______) 깊이의 구덩이에 넣고 매몰한다.", answer: "30cm 이상" },
+          { id: 8, question: "화학 공격 징후가 포착되어 (______)가 발령되면 임무형보호태세 1~2단계를 적용한다.", answer: "화생방경계경보" },
+          { id: 9, question: "개인 지급 물자는 방독면, 정화통, 보호의, (______), KD1 제독제가 있다.", answer: "KMARK1 신경해독제" },
+          { id: 10, question: "화학 공격 중 개인은 임무형보호태세 적용, (______), 오염인원 치료를 실시한다.", answer: "경보전파 및 보고" },
+          { id: 11, question: "화학무기 공격 중 지휘관은 임무형보호태세 3단계 또는 (______)를 즉각 적용한다.", answer: "4단계" },
+          { id: 12, question: "방독면은 평시 숙달을 통해 (______)까지 9초 이내 신속히 착용해야 한다.", answer: "검사 단계" },
+          { id: 13, question: "최고수준의 보호가 필요하다고 판단될 경우 (______)를 적용한다.", answer: "MOPP 4단계" },
+          { id: 14, question: "신경작용제 중독 증상 발생 시 (______)를 주사하고 KD1으로 피부를 제독한다.", answer: "KMARK1 신경해독제" },
+          { id: 15, question: "호흡곤란 전우 발견 시 방독면 착용 후 인공호흡((______))과 해독제를 주사한다.", answer: "흉부 및 등부 압박상지거상법" },
+          { id: 16, question: "화학무기 공격 후 개인은 (______).", answer: "오염인원 응급처치와 인공호흡을 실시하고 부대는 오염지역 회피 및 제독을 실시한다" },
+          { id: 17, question: "생물학작전을 대비해 평시 감염병 예방활동 등 개인 (______)를 철저히 한다.", answer: "건강관리" },
+          { id: 18, question: "생물학무기 공격 전에는 개인 건강관리, (______), 공습경보 시 대피를 실시한다.", answer: "전염병매개체에 대한 보호" },
+          { id: 19, question: "생물학공격 경보 전파 시 호흡을 멈추고 임무형보호태세 A단계 또는 (______)를 적용한다.", answer: "3단계" },
+          { id: 20, question: "(______)와 신경작용제는 증상이 유사하여 구분이 제한된다.", answer: "신경작용소" },
+          { id: 21, question: "생물학작용제 감염경로는 공기감염, 비말감염, (______) 크게 3가지이다.", answer: "접촉감염" },
+          { id: 22, question: "생물학공격 오염지역에서는 음식물을 (______)하여 섭취한다.", answer: "가공하여 섭취" },
+          { id: 23, question: "더티밤 공격 시 폭발과 함께 고준위 (______)이 확산된다.", answer: "방사성물질" },
+          { id: 24, question: "방사능 공격 중 개인은 경보전파 및 보고, (______).", answer: "임무형보호태세 적용, 방사능오염 회피" }
+        ],
+        desc: [
+          { id: 1, question: "핵무기 종류와 핵무기 효과에 대해서 기술하시오.", answer: "종류: 핵분열폭탄, 핵융합폭탄, 중성자폭탄. 효과: 폭풍 50%, 열복사선 35%, 초기핵방사선 14%, 전자기펄스 1%." },
+          { id: 2, question: "화학무기의 정의와 종류에 대해서 기술하시오.", answer: "정의: 화학물질의 생리작용을 이용해 인원을 살상·무능화하는 물질. 종류: 신경, 수포, 질식, 혈액, 무능화작용제." },
+          { id: 3, question: "생물학무기의 정의와 북한의 무기화 추정 작용제를 기술하시오.", answer: "정의: 사람/동식물에 질병을 유발하는 미생물 및 독소. 북한 무기화: 탄저, 두창, 페스트, 콜레라, 보툴리눔 독소 등." },
+          { id: 4, question: "방사능무기의 종류에 대해서 기술하시오.", answer: "방사성물질살포장치(더티밤), 방사선노출장치, 급조핵장치." },
+          { id: 5, question: "임무형보호태세 단계별 상황을 기술하시오.", answer: "준비(희박), 0단계(출동준비), 1·2단계(경계경보), 3단계(화생방경보/공격확인), 4단계(공격 후 최고수준 방호), A단계(위험급증/차량·건물 내)." },
+          { id: 6, question: "핵무기 공격 전 개인보호 요령을 기술하시오.", answer: "MOPP 2단계 이하 적용, 개인전투진지 구축 및 활용, 건물 대피, 장비 및 물자 보호." },
+          { id: 7, question: "핵무기 공격 중 개인보호 요령을 기술하시오.", answer: "즉시 엎드리거나 진지 내 대피 보호자세, 관측보고, MOPP 4단계 적용, 낙진 회피." },
+          { id: 8, question: "핵무기 공격 후 개인보호 요령을 기술하시오.", answer: "MOPP 4단계 유지, 방사능낙진 제거, 응급처치." },
+          { id: 9, question: "방독면 착용 절차를 순서대로 기술하시오.", answer: "① 가스 ② 쏴 ③ 검사 ④ 닫아 ⑤ 벗어 ⑥ 넣어" },
+          { id: 10, question: "보호장갑 착용 요령에 대해 기술하시오.", answer: "면장갑 착용 후 보호장갑 착용. 면장갑 상단은 전투복 소매 안으로, 고무 보호장갑은 보호의 소매 안쪽으로 넣는다." },
+          { id: 11, question: "K5 방독면 정화통 교체 시기에 대해 기술하시오.", answer: "흔들어서 소리 날 때, 침수 시, 호흡곤란 및 악취 발생 시, 파손 시, 탄 가루 유입 시, 방호시간 초과 시." },
+          { id: 12, question: "방독면 정화통의 오염물질 정화 원리에 대해 기술하시오.", answer: "1차 물리적 흡착(활성탄 기공 응축), 2차 화학적 흡착(첨착 금속물질과 화학 결합)." },
+          { id: 13, question: "염화작용제(CK) 노출 시 정화통 수명이 단축되는 이유를 기술하시오.", answer: "분자량이 작아 물리적 흡착이 어렵고 화학적 흡착에 의존하므로 화학적 흡착 종료 시 바로 내부로 통과하기 때문." },
+          { id: 14, question: "CBRN-1(핵) 관측자 최초보고 중 핵심항목을 기술하시오.", answer: "B 관측자 위치, D 공격시간, G 폭발수단, H 폭발형태." },
+          { id: 15, question: "신경해독제(KMARK-1)를 3대 이상 주사하면 안 되는 이유를 기술하시오.", answer: "아트로핀 6mg 이상 투여 시 정상인에게 졸림, 기억력 저하, 행동력 마비 등 심각한 부작용이 발생하기 때문." },
+          { id: 16, question: "신경작용제 인체 노출 시 증상에 대해 기술하시오.", answer: "호흡장애, 동공축소, 침·땀흘림, 두통, 구토, 경련, 대소변 방뇨 등." }
+        ]
+      },
+      "전투부상자처치": {
+        ox: [
+          { id: 1, question: "전투손상이란 전투로 인하여 발생하는 전투원의 신체적, 심리적 손상이다.", answer: "O", explanation: "참" },
+          { id: 2, question: "전투손상은 작고 가벼운 외상으로부터 사망 등 다양한 손상 유형이다.", answer: "O", explanation: "참" },
+          { id: 3, question: "살릴 수 있었던 부상유형은 1위 대량출혈, 2위 긴장성 기흉, 3위 기도폐쇄이다.", answer: "X", explanation: "예방 가능한 사망원인 1위 대량출혈, 2위 기도폐쇄, 3위 긴장성 기흉이다." },
+          { id: 4, question: "적의 직·간접적인 공격의 영향을 받을 때 수행하는 처치는 교전 중 처치이다.", answer: "O", explanation: "참" },
+          { id: 5, question: "교전 중 처치에선 생존율 향상을 위해 부상자 처치를 우선적으로 수행한다.", answer: "X", explanation: "교전 중 처치 단계에서는 적 위협 제거 및 화력 우위 확보가 최우선이다." },
+          { id: 6, question: "교전 중 처치에선 전투부상자의 무장을 임의로 해제해서는 안된다.", answer: "O", explanation: "참" },
+          { id: 7, question: "교전 중 발생한 부상자를 비교적 안전지역으로 후송할 때는 총기, 탄약, 통신장비를 함께 이동시킨다.", answer: "O", explanation: "참" },
+          { id: 8, question: "교전 중 발생한 대량출혈은 1분 이내에 전투복 위 근위부에 지혈대를 적용한다.", answer: "O", explanation: "참" },
+          { id: 9, question: "교전 중 발생한 대량출혈 시 1분 이내 지혈대를 적용한 뒤 시간을 \"시,분\"으로 기록한다.", answer: "X", explanation: "교전 중 처치 단계에서는 시간을 기록하지 않는다." },
+          { id: 10, question: "끌기법은 전투현장에서 은·엄폐가 가능한 곳으로 짧은거리를 이동하는데 효과적인 후송방법이다.", answer: "O", explanation: "참" },
+          { id: 11, question: "전술적 현장처치는 안전한 지역에서 적 공격의 영향이나 위험에 노출되지 않았을 때 수행하는 처치이다.", answer: "X", explanation: "전술적 현장처치도 여전히 전술적 위험에 노출될 수 있다." },
+          { id: 12, question: "전술적 현장처치에서는 전술적 상황임을 인지하고 경계 대책을 수립해야한다.", answer: "O", explanation: "참" },
+          { id: 13, question: "신체접합부위에는 응급지혈거즈를 삽입하고 개인압박붕대로 고정한다.", answer: "O", explanation: "참" },
+          { id: 14, question: "경추 손상이 의심되는 부상자에겐 턱 밀어올리기법으로 기도를 유지한다.", answer: "O", explanation: "참" },
+          { id: 15, question: "경추 손상이 의심되지 않는 부상자에겐 즉시 코인두기도기를 적용한다.", answer: "X", explanation: "기도 평가 및 도수기도유지를 먼저 시행한다." },
+          { id: 16, question: "코인두기도기를 삽입할 때에는 통상 오른쪽 콧구멍을 우선적으로 삽입한다.", answer: "O", explanation: "참" },
+          { id: 17, question: "심한 안면외상으로 기도가 폐쇄된 부상자에겐 즉시 코인두기도기를 적용한다.", answer: "X", explanation: "안면 골절/외상은 코인두기도기 삽입 금기증이다." },
+          { id: 18, question: "부상자의 호흡평가 시 분당 호흡수 6회 미만, 20회를 초과하면 호흡곤란으로 판단한다.", answer: "X", explanation: "교범 기준 수치와 상이하다." },
+          { id: 19, question: "출혈성 쇼크 부상자가 의식이 없을 경우, 전투응급처치요원 혹은 의무요원에게 수액처치를 요청한다.", answer: "O", explanation: "참" },
+          { id: 20, question: "저체온증은 혈액응고를 방해하고 저체온증은 더운 환경이라도 발생할 가능성이 있다.", answer: "O", explanation: "참" },
+          { id: 21, question: "단단한 막대식 들것은 가장 많이 사용되고 다양한 제대에 보급되며 표준형 구급차에 2개 탑재되어 있다.", answer: "X", explanation: "보급 및 제원 기준 상이." },
+          { id: 22, question: "전술적 후송처치는 의료적 처치가 가능한 지점 또는 의무시설로 후송시킬 때 수행하는 처치이다.", answer: "O", explanation: "참" },
+          { id: 23, question: "들것을 활용하여 부상자를 후송할 때에는 부상자를 고정하여 낙상을 예방한다.", answer: "O", explanation: "참" },
+          { id: 24, question: "들것을 활용하여 부상자를 후송할 시 부상자의 다리방향을 반드시 전방으로 한다.", answer: "X", explanation: "오르막길 및 탑승 시에는 머리방향을 전방으로 한다." }
+        ],
+        fill: [
+          { id: 1, question: "전투손상이란 전투로 인하여 발생하는 전투원의 (______) 손상이다.", answer: "신체적, 심리적" },
+          { id: 2, question: "전투부상자처치란 (______)을 위하여 예방 가능한 사망원인에 초점을 맞추어 시행하는 응급처치이다.", answer: "생존율 향상" },
+          { id: 3, question: "살릴 수 있었던 부상유형은 1위 대량출혈, 2위 (______), 3위 긴장성기흉이다.", answer: "기도폐쇄" },
+          { id: 4, question: "전투부상자처치는 교전 중 처치, (______), 전술적 후송처치로 구성된다.", answer: "전술적 현장처치" },
+          { id: 5, question: "적의 직·간접적인 공격의 영향을 받을 때 수행하는 처치는 (______)이다.", answer: "교전 중 처치" },
+          { id: 6, question: "전투부상자처치는 교전 중 처치, 전술적 현장처치, (______)로 구성된다.", answer: "전술적 후송처치" },
+          { id: 7, question: "(______)은 발·발목 경미한 손상 부상자에게 적용하는 도수후송법이다.", answer: "부축법" },
+          { id: 8, question: "전투용 지혈대는 버클, 조임끈, (______), 조임막대 고정대, 고정대 덮개로 구성된다.", answer: "조임막대" },
+          { id: 9, question: "전투용 지혈대는 버클, 조임끈, 조임막대, 고정대, (______)로 구성된다.", answer: "고정대 덮개" },
+          { id: 10, question: "(______)는 적 공격의 영향이나 위험에 노출되지 않았을 때 수행하는 처치이다.", answer: "전술적 현장처치" },
+          { id: 11, question: "정상적인 지혈대는 출혈 부위로부터 근위부 (______)cm에 적용한다.", answer: "5~7.5" },
+          { id: 12, question: "MARCH 알고리즘 절차는 대량출혈관리, (______), 호흡관리, 순환관리, 저체온증예방이다.", answer: "기도관리" },
+          { id: 13, question: "MARCH 알고리즘은 대량출혈관리, 기도관리, 호흡관리, (______), 저체온증예방이다.", answer: "순환관리" },
+          { id: 14, question: "다른 지혈처치 전 출혈부위를 우선 손 또는 신체일부로 (______)한다.", answer: "직접압박" },
+          { id: 15, question: "(______)는 지혈대 적용이 어려운 접합부위에 적용한다.", answer: "응급지혈거즈" },
+          { id: 16, question: "응급지혈거즈 삽입 후 출혈 부위를 최소 (______) 이상 직접 압박해야 한다.", answer: "3분" },
+          { id: 17, question: "의식이 없고 코를 골거나 그르렁 소리를 내면 (______)를 의심한다.", answer: "기도폐쇄" },
+          { id: 18, question: "경추손상 미의심 시 우선 실시하는 도수기도 유지법은 (______)이다.", answer: "머리기울임 턱 들어올리기법" },
+          { id: 19, question: "개방성 흉부손상 시 긴장성기흉 관리를 위해 (______)을 적용한다.", answer: "3면 밀폐드레싱" },
+          { id: 20, question: "부상자의 의식수준 확인 기법은 (______)이다.", answer: "AVPU 기법" },
+          { id: 21, question: "의식 혼미 및 손목 맥박 약화 시 (______)로 판단한다.", answer: "출혈성 쇼크" },
+          { id: 22, question: "중심체온이 (______) 이하로 떨어진 것을 저체온증이라 한다.", answer: "35도" },
+          { id: 23, question: "(______)는 의무시설로 후송시킬 때 수행하는 처치이다.", answer: "전술적 후송처치" },
+          { id: 24, question: "전투현장에서 휴대 및 보관이 용이한 핵심 들것은 (______)이다.", answer: "플라스틱 들것" }
+        ],
+        desc: [
+          { id: 1, question: "전투부상자처치의 정의를 기술하시오.", answer: "전투부상자의 생존율 향상을 위해 전투상황에서 발생 가능성이 높은 예방 가능한 사망원인에 초점을 맞춘 응급처치." },
+          { id: 2, question: "전투부상자처치 3단계를 기술하시오.", answer: "1) 교전 중 처치 2) 전술적 현장처치 3) 전술적 후송처치" },
+          { id: 3, question: "전투부상자처치의 3대 목적을 기술하시오.", answer: "1) 부상자 생존율 향상 2) 추가 부상자 발생 예방 3) 임무 완수" },
+          { id: 4, question: "교전 중 처치의 중점을 기술하시오.", answer: "적 위협 제거(화력 우위), 사지 대량출혈 시 즉시 지혈대 착용, 안전지대로의 이동." },
+          { id: 5, question: "전술적 현장처치의 중점을 기술하시오.", answer: "경계 대책 수립, 부상자 분류 및 처치, 의식저하 부상자 무장해제, MARCH 절차 처치." },
+          { id: 6, question: "전술적 후송처치의 중점을 기술하시오.", answer: "후송지점 경계 확보, 지속적 통신/의사소통, 부상자 재평가 및 손상 위험 관리." },
+          { id: 7, question: "도수후송법 적용 시 수칙을 기술하시오.", answer: "신체능력 고려, 2인 이상 시 호흡 일치, 부상부위 미접촉 이동." },
+          { id: 8, question: "도수후송 이동 간 수칙을 기술하시오.", answer: "적절한 휴식, 개인전투물자 휴대, 이동 간 즉각 대응사격 태세 유지." },
+          { id: 9, question: "대량출혈 양상 4가지를 기술하시오.", answer: "바닥에 고인 혈액/전투복 과다 적심, 거즈가 흠뻑 젖음, 박동성/분출성 출혈, 사지 절단." },
+          { id: 10, question: "기도폐쇄의 증상 및 징후를 기술하시오.", answer: "무의식 및 코골이/그르렁 소리, 구강 내 이물질/혈액, 안면부 심각 외상." },
+          { id: 11, question: "코인두기도기 금기증을 기술하시오.", answer: "눈 밑/귀 뒤 피멍, 코/귀 맑은 액체 유출, 심한 안면 외상 및 골절." },
+          { id: 12, question: "AVPU 의식 확인 기법을 기술하시오.", answer: "A(명료), V(언어자극 반응), P(통증자극 반응), U(무반응)." },
+          { id: 13, question: "들것 방향 결정 수칙을 기술하시오.", answer: "평지/내리막은 다리방향 전방, 오르막/탑승 시는 머리방향 전방." },
+          { id: 14, question: "들것후송 일반수칙을 기술하시오.", answer: "수평 유지, 부상자 고정(낙상 예방), 보조 일치, 1번 요원 머리 우측 위치." },
+          { id: 15, question: "코인두기도기 적용방법을 기술하시오.", answer: "머리 중립, 우측 콧구멍 선정, 코끝~귓볼 길이 측정, 윤활제 도포 후 삽입 고정." },
+          { id: 16, question: "신체접합부 대량출혈 처치법을 기술하시오.", answer: "피부 개방 후 직접압박, 지혈거즈 삽입 충전, 최소 3분 압박 후 압박붕대 고정." }
+        ]
+      },
+      "수류탄": {
+        ox: [
+          { id: 1, question: "수류탄의 안전핀은 제거 후에도 바로 폭발하지 않는다.", answer: "O", explanation: "참" },
+          { id: 2, question: "연막탄은 살상용으로 설계된 수류탄이다.", answer: "X", explanation: "신호 및 차장용 비살상 수류탄이다." },
+          { id: 3, question: "수류탄의 폭발 시간은 일반적으로 10초 이상이다.", answer: "X", explanation: "지연시간은 약 4~5초이다." },
+          { id: 4, question: "수류탄은 물속에서도 작동할 수 있다.", answer: "O", explanation: "참" },
+          { id: 5, question: "모든 수류탄은 동일한 폭발력을 가진다.", answer: "X", explanation: "용도와 종류에 따라 폭발력이 다르다." },
+          { id: 6, question: "현대의 수류탄은 전자식 점화 장치를 사용한다.", answer: "X", explanation: "기계식 점화(신관/뇌관) 방식을 사용한다." },
+          { id: 7, question: "수류탄 폭발작용 순서는 총 9단계이다.", answer: "X", explanation: "총 8단계로 구성된다." },
+          { id: 8, question: "철조망 지대 통과 개척 시 세열수류탄을 활용할 수 있다.", answer: "O", explanation: "참" },
+          { id: 9, question: "수류탄 살상반경이 좁은 이유는 투척수의 안전보장이다.", answer: "O", explanation: "참" },
+          { id: 10, question: "수류탄 내부의 지연제 길이는 5cm 이다.", answer: "X", explanation: "지연제 길이는 3cm이다." },
+          { id: 11, question: "수류탄 특성은 원거리 투척, 좁은 살상반경, 지연폭발작용이 있다.", answer: "X", explanation: "수류탄은 '근거리 투척' 무기이다." },
+          { id: 12, question: "소이수류탄 특징은 안전클립이 없는 것이다.", answer: "O", explanation: "참" },
+          { id: 13, question: "수류탄은 폭발 후 파편으로 살상 효과를 가진다.", answer: "O", explanation: "참" },
+          { id: 14, question: "수류탄의 종류에 따라 목적과 효과가 달라진다.", answer: "O", explanation: "참" },
+          { id: 15, question: "수류탄의 안전장치는 2가지이다.", answer: "X", explanation: "안전클립, 안전핀, 안전손잡이 총 3가지이다." },
+          { id: 16, question: "세열수류탄 안전장치는 해제하였다가 다시 결합할 수 있다.", answer: "X", explanation: "재결합해서는 안 된다." },
+          { id: 17, question: "K416, K417, K418 수류탄 몸통은 황토성분으로 3개월 이내 자연 분해된다.", answer: "O", explanation: "참" },
+          { id: 18, question: "수류탄 내부의 지연제 1cm가 연소하는 시간은 1.6초다.", answer: "X", explanation: "1cm당 약 1.5초이다." },
+          { id: 19, question: "수류탄은 세열수류탄, 연막수류탄, 화학수류탄, 연습수류탄 4가지로 분류된다.", answer: "X", explanation: "소이수류탄 등 다양하게 분류된다." },
+          { id: 20, question: "수류탄 기본투척자세는 3가지다.", answer: "X", explanation: "기본투척자세는 4가지이다." },
+          { id: 21, question: "수류탄 기본투척자세 서서던져, 굽혀던져 준비 동작은 동일하다.", answer: "O", explanation: "참" },
+          { id: 22, question: "수류탄 하향투척은 목표물과 거리, 경사도, 지연시간을 고려하여 투척해야 한다.", answer: "O", explanation: "참" },
+          { id: 23, question: "수류탄은 전투의 승패를 판가름하는 중요한 요인으로 3발 이상 휴대하는 탄약이다.", answer: "X", explanation: "통상 1~2발을 휴대한다." },
+          { id: 24, question: "수류탄 폭발작용순서 2단계는 안전핀 및 안전고리 제거다.", answer: "O", explanation: "참" }
+        ],
+        fill: [
+          { id: 1, question: "(______)는 원거리 투척 시, 가슴높이 엄폐물 보호 가능 시 적용한다.", answer: "서서던져" },
+          { id: 2, question: "수류탄 기본투척자세는 서서던져, (______), 굽혀던져, 누워던져다.", answer: "무릎던져" },
+          { id: 3, question: "(______)는 건물 출입구나 창문에 투척할 때 적용한다.", answer: "굽혀던져" },
+          { id: 4, question: "(______)는 엄폐물이 없는 개활지에서 적용한다.", answer: "누워던져" },
+          { id: 5, question: "수류탄은 폭약 또는 화학제, (______)로 충전된다.", answer: "연막제" },
+          { id: 6, question: "(______)는 신체를 바닥에 닿을 수 없는 오염지역 등에서 적용한다.", answer: "쪼그려서부터 서서 던져" },
+          { id: 7, question: "수류탄 특성은 (______), 좁은 살상반경, 지연폭발작용이다.", answer: "근거리 투척" },
+          { id: 8, question: "세열수류탄 (______)는 해제 후 재결합해서는 안 된다.", answer: "안전장치" },
+          { id: 9, question: "수류탄 투척 시 목표물 명중에 우선을 두고 (______) 있게 적용한다.", answer: "융통성" },
+          { id: 10, question: "(______)는 급박한 상황에서 누워던져보다 원거리 투척 요구 시 적용한다.", answer: "엎드려서부터 무릎던져" },
+          { id: 11, question: "공중폭발 투척은 엄폐가 확보되거나 (______) 이상 투척 가능 시 실시한다.", answer: "40m" },
+          { id: 12, question: "안전손잡이 이탈 후 폭발까지 걸리는 시간은 (______)이다.", answer: "4~5초" },
+          { id: 13, question: "(______)은 공이가 뇌관을 때리도록 회전력을 주는 장치다.", answer: "공이용수철" },
+          { id: 14, question: "폭발 순서는 점화작약 ➔ 상충작약 ➔ (______) 순이다.", answer: "기폭작약" },
+          { id: 15, question: "세열수류탄은 (______)에서 강력한 위력을 발휘한다.", answer: "근접전투" },
+          { id: 16, question: "(______)은 안전손잡이가 신관에서 이탈하는 것을 막는 철선이다.", answer: "안전클립" },
+          { id: 17, question: "(______)은 안전손잡이를 고정시키는 철판이다.", answer: "안전핀" },
+          { id: 18, question: "수류탄 투척자세는 기본 4가지와 (______) 3가지로 나뉜다.", answer: "응용투척자세" },
+          { id: 19, question: "탄의 외부를 감싸고 있는 몸체는 (______)이다.", answer: "몸통" },
+          { id: 20, question: "안전핀 제거 후 (______)를 느슨하게 잡으면 폭발할 수 있다.", answer: "안전손잡이" },
+          { id: 21, question: "장비와 물자를 소이 파괴하는 원통형 수류탄은 (______)이다.", answer: "소이수류탄" },
+          { id: 22, question: "(______)은 세열수류탄과 동일 제원으로 제작된 훈련용 탄약이다.", answer: "K479 훈련용 수류탄" },
+          { id: 23, question: "안전장치와 (______)가 결합된 부품은 신관뭉치이다.", answer: "폭발점화장치" },
+          { id: 24, question: "신호 및 연막차장용 수류탄은 (______)이다.", answer: "백색연막수류탄" }
+        ],
+        desc: [
+          { id: 1, question: "수류탄 파지 시 주의사항을 기술하시오.", answer: "안전손잡이가 이탈되지 않게 견고히 잡고, 안전장치 해제 후 고쳐잡거나 손가락을 펴지 않는다." },
+          { id: 2, question: "수류탄 왼손 파지 요령을 기술하시오.", answer: "왼손 파지 3가지 요령 중 투척자에게 가장 편안한 요령을 선택하여 적용한다." },
+          { id: 3, question: "수류탄 응용투척자세 3가지를 기술하시오.", answer: "1) 엎드려서부터 서서 던져 2) 엎드려서부터 무릎 던져 3) 쪼그려서부터 서서 던져" },
+          { id: 4, question: "수류탄 폭발작용 순서를 기술하시오.", answer: "안전클립 제거 ➔ 안전핀 제거 ➔ 안전손잡이 이탈 ➔ 공이 뇌관 타격 ➔ 뇌관 불꽃 ➔ 지연제 연소 ➔ 기폭관 점화 ➔ 충전물 폭발 및 파편 비산." },
+          { id: 5, question: "불발탄 발생 시 조치 및 경계병 운용을 기술하시오.", answer: "50m 이상 이격 및 30분간 대기, EOD 도착 전까지 2인 1조 경계 통제 및 매 시간 보고." },
+          { id: 6, question: "수류탄의 중요성을 기술하시오.", answer: "전 장병 1~2발 휴대, 근접전투 승패 결정, 부비트랩 등 전술적 활용 가능." },
+          { id: 7, question: "오른손 수류탄 파지법을 기술하시오.", answer: "신관뭉치가 위로 향하게 하고 엄지 첫째·둘째 마디 사이에 안전손잡이가 오도록 감싸 쥔다." },
+          { id: 8, question: "수류탄 지연폭발 원리를 기술하시오.", answer: "지연제 3cm가 1.5초당 1cm씩 연소하여 약 4.5초 소요되며 오차를 고려해 4~5초 지연시간을 갖는다." },
+          { id: 9, question: "K413 세열수류탄 정의를 기술하시오.", answer: "투척이 용이한 소형 경량화 원형 수류탄으로 경강선재 파편을 비산시키는 대인살상용 수류탄." },
+          { id: 10, question: "철책선 투척 시 주의사항을 기술하시오.", answer: "높이와 거리에 따라 상·하향 투척하고 아군 진지로 낙하 시 신속 엄폐 또는 처치공 처리." },
+          { id: 11, question: "공중폭발 투척 시기를 기술하시오.", answer: "엄폐 확보 및 40m 이상 원거리 투척 가능 시, 수풀 지역 등 지상 폭발 효과 감소 시." },
+          { id: 12, question: "하향투척 요령을 기술하시오.", answer: "목표물 3~5m 앞쪽에 투척하여 굴러서 폭발하도록 유도하며 경사도와 거리를 고려한다." },
+          { id: 13, question: "수류탄 운용 상황 4가지를 기술하시오.", answer: "철조망 통로 개척, 부비트랩 운용, 적 수류탄 공격 대처, 동시 집중 투척." },
+          { id: 14, question: "세열수류탄 사용 시 주의사항을 기술하시오.", answer: "안전장치는 투척 직전에만 해제하며 휴대 시에는 안전 결합 상태를 유지한다." },
+          { id: 15, question: "KM34 백린연막탄 주의사항을 기술하시오.", answer: "공기 접촉 시 고열 발화하므로 피부 접촉 시 찬물 침수 또는 젖은 천으로 공기를 차단한다." },
+          { id: 16, question: "K416 훈련수류탄 특징을 기술하시오.", answer: "폭음/연막/불꽃 발생, 몸통은 황토 성분으로 3개월 내 자연분해, 신관은 회수 폐기." }
+        ]
+      },
+      "개인화기": {
+        ox: [
+          { id: 1, question: "유효사거리란 어떤 무기가 평균 80% 확률로 표적을 명중시킬 수 있는 거리이다.", answer: "X", explanation: "유효사거리는 명중률 '50%' 기준이다." },
+          { id: 2, question: "K2소총 K100탄 최대사거리는 2,653m이다.", answer: "X", explanation: "K100탄 최대사거리는 3,300m이다." },
+          { id: 3, question: "K2·K2C1소총으로 K100탄 사용시 유효사거리는 600m이다.", answer: "O", explanation: "참" },
+          { id: 4, question: "K2소총 조준창의 길이는 49.3cm이다.", answer: "O", explanation: "참" },
+          { id: 5, question: "K2C1소총 조절형 개머리판 3단의 길이는 97cm이다.", answer: "O", explanation: "참" },
+          { id: 6, question: "안전검사의 순서는 조정간 안전 ➔ 노리쇠 후퇴·고정 ➔ 약실 검사 ➔ 노리쇠 전진 ➔ 조정간 단발 ➔ 격발이다.", answer: "X", explanation: "노리쇠 후퇴·고정을 먼저 실시한다." },
+          { id: 7, question: "소총의 분해결합은 평상시 손질 시, 사격 전·후 손질 시, 고장배제 시, 기술검사 및 정비 시에 실시한다.", answer: "O", explanation: "참" },
+          { id: 8, question: "K2소총 사격 간 사거리 451 ~ 550m 미만은 가늠자 상·하조정쇠를 '5'에 위치시킨다.", answer: "X", explanation: "'사거리조정쇠'를 조작한다." },
+          { id: 9, question: "소염기는 총구에 부착된 장치로서 사격 시 총구에서 발생되는 섬광을 분산시키고 소음을 최소화해주며 가스방출 홈이 뚫려 있다.", answer: "X", explanation: "섬광 분산 및 총구 들림/반동 억제 역할을 한다." },
+          { id: 10, question: "총기손질 시 사용하는 기름 중 세척용의 종류는 광유류, 용해유, 비눗물이 있다.", answer: "O", explanation: "참" },
+          { id: 11, question: "추출 불능의 고장 원인은 파손된 차개, 긁힘 및 차개용수철 파손, 긴개용수철 또는 차개용수철에 가스 및 오물 누적이다.", answer: "X", explanation: "지문은 '방출 불능'의 원인이다." },
+          { id: 12, question: "사격자세 기본요소는 편안한 자세, 왼손 잡는 법, 오른손 잡는 법, 견착, 오른 팔꿈치, 뺨용접 유지가 있다.", answer: "O", explanation: "참" },
+          { id: 13, question: "화생방 오염지역 혹은 얕은 물가에서 이동 간 정지한 상황에서 단시간 사주경계를 할 때 사용하는 자세는 무릎쏴이다.", answer: "X", explanation: "지문의 상황은 '쪼그려쏴'이다." },
+          { id: 14, question: "표적정렬이란 가늠자와 표적을 일치시키기 위하여 가늠쇠의 상단을 표적의 중앙 조준점에 위치시키는 것이다.", answer: "O", explanation: "참" },
+          { id: 15, question: "사수는 호흡을 중지하였다면 표적정렬에 집중해야 한다.", answer: "X", explanation: "호흡 중지 후에는 '조준선정렬'에 집중한다." },
+          { id: 16, question: "K1소총의 총 가늠자 좌·우조정쇠와 상·하조정쇠의 총 크리크 수는 좌·우 22크리크, 상·하 28크리크이다.", answer: "O", explanation: "참" },
+          { id: 17, question: "주간에 보고자하는 대상물을 식별하는 역할을 하지만 야간사격과 같이 어두운 상태에서는 기능 발휘를 하지 못하는 안구 내 세포는 간상세포이다.", answer: "X", explanation: "주간 식별 세포는 '원추세포'이다." },
+          { id: 18, question: "수지 조준선정렬 착오와 개방 불량일 경우 긴 수지의 탄착군이 형성된다.", answer: "X", explanation: "조준선정렬 불량에 대한 설명이다." },
+          { id: 19, question: "25m 영점표적지는 100m 실거리의 규격을 1/10로 축소한 것으로써 노란색 바탕의 A4용지에 표적과 그 중앙 하단에 직경 1.4cm의 조준원이 표시된다.", answer: "X", explanation: "100m 실거리의 '1/4' 축소 표적지이다." },
+          { id: 20, question: "K100탄을 사용하여 K2소총 사격시 100m에서는 조준점보다 1.7cm 상단에 탄착점이 형성된다.", answer: "O", explanation: "참" },
+          { id: 21, question: "레이저 표적지시기(NLAD-23) 1크리크당 탄착군 이동 거리는 3mm이다.(25m 기준)", answer: "X", explanation: "25m 기준 1크리크당 5mm 이동한다." },
+          { id: 22, question: "레이저 표적지시기(NLAD-23) 선택스위치를 조작할 때 적의 야간 전술 고글망을 피해서 스위치를 IR-AL에 위치시켜야 한다.", answer: "X", explanation: "설정 제원 기준 상이." },
+          { id: 23, question: "레이저 표적지시기(NLAD-23) 선택스위치를 조작할 때 가시광선 저출력을 위해서 스위치를 VIS-AL에 위치시켜야 한다.", answer: "O", explanation: "참" },
+          { id: 24, question: "레이저 표적지시기(NLAD-23) 배터리 잔량을 확인할 때 26 ~ 50%가 남아있을 경우 상태표시등은 3번 점멸된다.", answer: "X", explanation: "26~50% 잔량 시에는 2번 점멸된다." }
+        ],
+        fill: [
+          { id: 1, question: "K2C1소총 조절형 개머리판 2단계 전장 길이는 (______)이다.", answer: "95.5cm" },
+          { id: 2, question: "K1소총이 K2소총과 구분되는 특성은 (______)이다.", answer: "어깨받침쇠 신축식" },
+          { id: 3, question: "손잡이 내부 비상소제도구 보관함은 (______)이다.", answer: "비상소제통" },
+          { id: 4, question: "가스조절기 '대'는 (______), 먼지, 강우 등 악조건 시 사용한다.", answer: "저온이나 모래" },
+          { id: 5, question: "탄알을 약실 내 고정시켜주는 돌출 결합부는 (______)이다.", answer: "잠쇠" },
+          { id: 6, question: "예광탄은 연소를 통해 (______)을 확인할 수 있는 탄약이다.", answer: "표적위치, 사격방향" },
+          { id: 7, question: "영점 획득 소총의 가늠자·가늠쇠·조준점을 연결한 가상선은 (______)이다.", answer: "절대조준선" },
+          { id: 8, question: "덮개를 잡아 총을 고정하는 사격 기본요소는 (______)이다.", answer: "왼손 잡는 법" },
+          { id: 9, question: "기동 간 적 조우 시 즉각 사격하는 자세는 (______)이다.", answer: "서서쏴" },
+          { id: 10, question: "가상의 십자선을 만들어 가늠쇠를 중앙에 두는 것은 (______)이다.", answer: "시선" },
+          { id: 11, question: "가늠자 사격 시 최종 눈의 초점은 (______)에 둔다.", answer: "조준선정렬" },
+          { id: 12, question: "야간 조준법에는 야간가늠자 조준과 (______) 조준법이 있다.", answer: "가늠자 상단" },
+          { id: 13, question: "탄두에 (______)을 주어 정밀성을 높이는 홈은 강선이다.", answer: "회전력, 사거리" },
+          { id: 14, question: "총구를 떠난 탄두는 (______)으로 인해 속도가 감속된다.", answer: "공기의 저항" },
+          { id: 15, question: "K1 영점표적지 하단 원점 거리는 (______)이다.", answer: "2.4cm, 4.8cm" },
+          { id: 16, question: "K2/K2C1 표적지 하단 원점 거리는 (______)이다.", answer: "3.1cm/3.2cm, 3.3cm" },
+          { id: 17, question: "KM193탄 K1소총 200m 탄착점은 조준점 하단 (______)이다.", answer: "16.4cm" },
+          { id: 18, question: "K100탄 K2C1소총 200m 탄착점은 조준점 하단 (______)이다.", answer: "4.8cm" },
+          { id: 19, question: "K100탄 K2소총 100m 탄착점은 조준점 상단 (______)이다.", answer: "1.7cm" },
+          { id: 20, question: "K100탄 K2C1소총 100m 탄착점은 조준점 상단 (______)이다.", answer: "1.4cm" },
+          { id: 21, question: "URS-23 조준경 1크리크당 탄착 이동거리는 (______)이다.", answer: "3.625mm" },
+          { id: 22, question: "조준경의 (______) 보정과 확대경 장착 시 (______) 유지가 요구된다.", answer: "콜리메이팅, 시차보정 / 눈높이" },
+          { id: 23, question: "K2C1소총 명칭의 C는 (______)을 의미한다.", answer: "개량" },
+          { id: 24, question: "렌즈 반사광을 차단하는 벌집 모양 부품은 (______)이다.", answer: "킬플래쉬" }
+        ],
+        desc: [
+          { id: 1, question: "K2C1소총의 외형적 특성 3가지를 기술하시오.", answer: "피카티니 레일 장착, 전방손잡이, 신축 조절형 개머리판." },
+          { id: 2, question: "안전검사 적용 시기를 기술하시오.", answer: "사격 전·중·후, 소총 분해 및 결합 이전에 반드시 실시." },
+          { id: 3, question: "분해결합 시 주의사항을 기술하시오.", answer: "안전검사 선행, 부품 분실/파손 유의, 평탄한 장소 실시, 무리한 힘 금지." },
+          { id: 4, question: "추출작용의 원리를 기술하시오.", answer: "노리쇠뭉치 갈퀴가 탄피홈을 물고 노리쇠 후퇴력으로 약실 밖으로 탄피를 인출." },
+          { id: 5, question: "총기손질도구 8가지를 기술하시오.", answer: "휴대주머니, 총열솔, 총강솔, 약실솔, 꽂을대, 손질포, 기름통, 손질어댑터." },
+          { id: 6, question: "사격 전 총기손질 공정을 기술하시오.", answer: "약실/총강 기름 제거, 노리쇠집 주유, 작동부 기름칠, 탄알집 손질." },
+          { id: 7, question: "사격 중 총기손질 공정을 기술하시오.", answer: "약실/총강 탄매 제거, 노리쇠 분해 손질, 작동부 주유, 외관 손질." },
+          { id: 8, question: "총강 손질 요령을 기술하시오.", answer: "어댑터 장착, 강유통 솔로 약실에서 총구로 밀어 닦고 마른 손질포로 반복 청소 후 엷게 주유." },
+          { id: 9, question: "약실 손질 요령을 기술하시오.", answer: "약실솔에 강유유를 묻혀 약실 청소 후 마른 손질포로 건조 닦아내고 윤활유 도포." },
+          { id: 10, question: "장전 불능 시 조치방법을 기술하시오.", answer: "탄알집/총열잠금턱 탄매 청소, 노리쇠울림못 교환, 복좌용수철/노리쇠집 손질 및 주유." },
+          { id: 11, question: "K2소총 영점가늠자 설정법을 기술하시오.", answer: "좌우조정쇠 반대방향 17크리크, 상하조정쇠 '상'방향 20크리크 회전 후 사거리 2.5 위치." },
+          { id: 12, question: "사격 전 점검사항 5가지를 기술하시오.", answer: "안전검사, 사거리조정쇠 2.5, 복좌힌지 전방 확인, 가스조절기 '중', 총강 이물질 점검." },
+          { id: 13, question: "NLAD-23 리모트 스위치 모드 조작을 기술하시오.", answer: "누르고 있으면 연속, 2회 연속조사, 3회 0.8초 점멸, 4회 0.4초 점멸." },
+          { id: 14, question: "URS-23 조준경 절전모드 설정을 기술하시오.", answer: "+버튼 10초 이상 눌러 진입 후 1회(10분), 2회(1시간), 3회(12시간), 4회(해제) 설정." },
+          { id: 15, question: "URS-23 자동조절모드 설정을 기술하시오.", answer: "+와 -버튼을 동시에 3초간 눌러 설정하며 3회 점멸 시 자동모드 작동." },
+          { id: 16, question: "NLAD-23 설정 저장 스위치 사용법을 기술하시오.", answer: "FIRE 누른 상태에서 설정(*) 버튼 2초간 눌러 저장하면 다른 모드에서도 즉시 조사." }
+        ]
+      },
+      "각개전투": {
+        ox: [
+          { id: 1, question: "약진이란 사격과 기동간 이동방법의 하나로 은·엄폐된 한 지점으로부터 다음 은·엄폐할 지점으로 신속히 전진하는 전투기술이다.", answer: "O", explanation: "참" },
+          { id: 2, question: "약진에서 중요한 점은 적의 조준사격을 피할 수 있는 이동거리이다.", answer: "X", explanation: "약진에서 중요한 점은 적의 조준사격을 피할 수 있는 '이동시간(속도)'이다." },
+          { id: 3, question: "포복이란 적과 접촉이 예상되는 상황에서 적의 관측으로부터 보호 받을 수 있도록 몸을 지면에 최대한 밀착시켜 의도한 지점까지 이동하는 기술이다.", answer: "X", explanation: "적과 '접촉한' 상황에서 실시하는 기술이다." },
+          { id: 4, question: "지형물에서 이탈시에는 뒤로 2~3보 후퇴포복후 사격방향으로 이탈한다.", answer: "X", explanation: "사격방향이 아닌 '사격반대방향'으로 이탈해야 한다." },
+          { id: 5, question: "적 포탄 낙하시 행동에는 우회, 일단정지, 엄폐약진 등이 있다.", answer: "O", explanation: "참" },
+          { id: 6, question: "포복이란 적과 접촉한 상황에서 적의 관측과 조준사격으로부터 보호 받을 수 있도록 몸을 지면에 최대한 밀착시켜 의도한 지점까지 이동하는 기술이다.", answer: "O", explanation: "참" },
+          { id: 7, question: "포복 준비동작에서 시선은 지면을 바라보고 몸은 최대한 지면에 밀착시킨다.", answer: "X", explanation: "시선은 지면이 아닌 '전방'을 주시해야 한다." },
+          { id: 8, question: "각개전투란 주어진 근접전투 상황하에서 자신의 생존성유지보다 부여된 임무를 성공시키는데 중점을 두고 실시 하는 즉각조치 및 전투기술", answer: "X", explanation: "자신의 생존성을 '유지하며' 임무를 성공적으로 수행하는 것이다." },
+          { id: 9, question: "약진 2동작에서 주의사항은 엉덩이를 머리보다 높게하여 전방으로 튀어나갈 준비를 해야한다.", answer: "X", explanation: "피탄 면적을 줄이기 위해 엉덩이를 머리보다 '낮게' 해야 한다." },
+          { id: 10, question: "낮은포복 준비동작에서 시선은 정면을 바라보고 몸과 발뒤꿈치는 최대한 지면에 밀착시킨다.", answer: "O", explanation: "참" },
+          { id: 11, question: "지형물에서 이탈시에는 뒤로 2~3보 후퇴포복후 사격반대방향으로 이탈한다.", answer: "O", explanation: "참" },
+          { id: 12, question: "포복 준비동작에서 시선은 전방을 바라보고 몸은 최대한 지면에 밀착시킨다.", answer: "O", explanation: "참" },
+          { id: 13, question: "약진 2동작에서 주의사항은 엉덩이를 머리보다 낮게하여 전방으로 튀어나갈 준비를 해야한다.", answer: "O", explanation: "참" },
+          { id: 14, question: "경계의 성패는 우수한 전투력 보다 초병 및 지휘관(자)의 강인한 정신력에 의해 좌우된다.", answer: "O", explanation: "참" },
+          { id: 15, question: "초병 경계시에는 반드시 3명 1개조로 편성함으로서 우발상황 발생시 신속하게 대처하고 상호지원 및 사주경계가 가능하도록 한다", answer: "X", explanation: "초병 경계는 통상 '2인 1개조'로 편성한다." },
+          { id: 16, question: "초병수칙이란 초병이 경계임무 수행한 반드시 지키고 준수하는 절대적인 명령이다", answer: "O", explanation: "참" },
+          { id: 17, question: "신속한 전파 급작요령은 먼 곳부터 가까운 곳으로 전파를 실시한다", answer: "X", explanation: "급작 상황 전파는 '가까운 곳부터 먼 곳' 순으로 실시한다." },
+          { id: 18, question: "보고원칙은 '선조치 후보고'가 원칙이지만 상황이 긴박하거나 보고로 인해 기도가 노출될 위험이 있을 시에는 '선보고 후조치'를 한다.", answer: "X", explanation: "상황이 긴박하거나 기도 노출 위험 시에는 선조치 후보고를 원칙으로 한다." },
+          { id: 19, question: "초병은 경계임무 수행 간 발견 또는 특이사항 발생 시 지휘통제실로 상황을 보고해야하며, 일반적으로 6하 원칙 중 \"누가, 무엇을, 어디서, 언제\"를 포함하여 핵심단어로 간결하게 보고한다.", answer: "O", explanation: "참" },
+          { id: 20, question: "수하는 채단 또는 야군을 확인 목적으로 인원에 대해서만 실시한다.", answer: "X", explanation: "인원뿐만 아니라 의심스러운 물체나 차량 등에 대해서도 종합적으로 식별 및 수하를 실시한다." },
+          { id: 21, question: "지뢰란 땅속, 땅표면 또는 수중에 설치되어 사람이나 장비 등의 접근 및 접촉에 의한 폭발로 사람을 살상하거나 장비를 파괴할 목적으로 만든 폭발물이다.", answer: "O", explanation: "참" },
+          { id: 22, question: "M14 대인지뢰는 아주 작은 크기의 파편형 대인지뢰로 인원의 접촉지점을 상해할 목적으로 운용한다.", answer: "X", explanation: "M14 대인지뢰는 파편형이 아닌 '폭풍형(발목지뢰)'이다." },
+          { id: 23, question: "M49 조명지뢰는 인명살상과 조명목적으로 사용한다.", answer: "X", explanation: "M49 조명지뢰는 인명살상이 아닌 '경계 및 조명' 목적으로 운용된다." },
+          { id: 24, question: "진지를 분류할 때 진지용도에 의한 분류시 주진지, 예비진지, 보조진지, 차후진지로 나뉜다.", answer: "X", explanation: "진지 용도별 분류는 주진지, 예비진지, 보충진지 등으로 구분된다." }
+        ],
+        fill: [
+          { id: 1, question: "주간 전술보행은 적 접촉 예상 지역에서 (______) 접근 시 실시한다.", answer: "은밀히" },
+          { id: 2, question: "병력과 장비를 적으로부터 은폐 및 가장하는 것은 (______)이다.", answer: "위장" },
+          { id: 3, question: "기도비닉 유지 및 음성 제한 시 효과적인 수단은 (______)이다.", answer: "완수신호" },
+          { id: 4, question: "전투현장에서 짧게 하달하는 구두명령은 (______)이다.", answer: "전투명령" },
+          { id: 5, question: "약진 간 지형물 접근 시 엄폐물 (______) 전에 엎드린다.", answer: "2~3보" },
+          { id: 6, question: "지형물 이탈 시에는 후퇴포복 후 (______)으로 이탈한다.", answer: "사격반대방향" },
+          { id: 7, question: "낮은포복 준비동작에서 시선은 (______)을 바라본다.", answer: "정면" },
+          { id: 8, question: "지형물 이용요령에는 (______)가 있다.", answer: "접근시, 이용시, 이탈시" },
+          { id: 9, question: "정숙 이동 및 개활지 통과 시 적용하는 보행법은 (______)이다.", answer: "야간전투보행" },
+          { id: 10, question: "조명탄 점등 시 노출 방지를 위해 취하는 행동은 (______)이다.", answer: "복자부동" },
+          { id: 11, question: "보조포복의 일종으로 부르는 동작은 (______)이다.", answer: "반폭장" },
+          { id: 12, question: "후퇴포복 시 시선은 정면, 몸과 (______)를 지면에 밀착시킨다.", answer: "발뒤꿈치" },
+          { id: 13, question: "야간 안전거리 기준은 (______)이다.", answer: "10 - 15보" },
+          { id: 14, question: "수하거리는 상황과 조건에 따라 (______) 있게 적용한다.", answer: "융통성" },
+          { id: 15, question: "보고의 종류는 시기에 따라 (______)가 있다.", answer: "최초, 중간, 최종" },
+          { id: 16, question: "적의 동태 파악을 위해 행하는 조직적 관측은 (______)이다.", answer: "관찰활동" },
+          { id: 17, question: "상황에 관계없이 모든 초병이 지켜야 할 것은 (______)이다.", answer: "일반수칙" },
+          { id: 18, question: "초병은 경계근무상 (______) 외에는 누구의 지시도 받지 않는다.", answer: "상관" },
+          { id: 19, question: "주간이라도 (______)가 제한되거나 신분 불확실 시 수하를 실시한다.", answer: "시계" },
+          { id: 20, question: "피수하자 반항 시 지원초병은 (______)를 할 수 있도록 대기한다.", answer: "즉각조치" },
+          { id: 21, question: "지뢰 폭발 시 파편과 화염을 분산시키는 주작약은 (______)이다.", answer: "주방향" },
+          { id: 22, question: "지휘자가 회로를 조작해 폭발시키는 것은 (______)이다.", answer: "운용원자통" },
+          { id: 23, question: "M16A1 지뢰는 (______) 조발작용에 의해 폭발한다.", answer: "압력식 및 인력식" },
+          { id: 24, question: "시간/자재 제한 시 현장 엄폐물로 구축하는 진지는 (______)이다.", answer: "급조진지" }
+        ],
+        desc: [
+          { id: 1, question: "야간 전술보행 적용 시기를 기술하시오.", answer: "시도가 극히 제한되어 전방 식별이 어려운 상태에서 은밀히 이동할 때." },
+          { id: 2, question: "복자부동 적용 시기를 기술하시오.", answer: "야간 이동 중 공중조명탄이 켜지거나 개활지에서 적에게 노출을 방지할 때." },
+          { id: 3, question: "북한군 철조망 취약점 4가지를 기술하시오.", answer: "철선 간격 넓고 아연 함유 적어 절단 용이, 가시 유동 심함, 목항/시멘트항 사용, 못 고정식." },
+          { id: 4, question: "철조망 우회 통과 시기를 기술하시오.", answer: "시간 여유/기도비닉 요구 시, 장애물 부재 시, 하단 지뢰 다수 매설 시, 우회로가 화력권 밖일 때." },
+          { id: 5, question: "각개전투의 정의를 기술하시오.", answer: "근접전투 상황에서 생존성을 유지하며 부여된 임무를 성공적으로 수행하기 위한 즉각조치 및 전투기술." },
+          { id: 6, question: "기도비닉 요령을 기술하시오.", answer: "사격통제, 소음 및 불빛 차단(방음/발광대책), 위장, 불필요한 이동 통제." },
+          { id: 7, question: "주간 전술보행 적용 시기를 기술하시오.", answer: "적 접촉 예상 지역 은밀 접근 시, 숲이나 넓은 지역 정찰 시." },
+          { id: 8, question: "약진의 정의를 기술하시오.", answer: "사격과 기동 간 은·엄폐된 지점에서 다음 은·엄폐 지점으로 신속히 전진하는 기술." },
+          { id: 9, question: "포복의 정의를 기술하시오.", answer: "적 접촉 상황에서 관측 및 조준사격을 피해 몸을 지면에 밀착하여 이동하는 기술." },
+          { id: 10, question: "기습사격 시 행동요령을 기술하시오.", answer: "즉각 대응사격, 최단거리 은·엄폐 후 지휘자 판단에 따라 고착/우회/제압 실시." },
+          { id: 11, question: "적 포탄 낙하 시 행동요령을 기술하시오.", answer: "최초 낙하 시 즉시 엎드려 생존성 확보 후 낙하 유형에 따라 신속 이동/엄폐." },
+          { id: 12, question: "수하 7단계를 기술하시오.", answer: "① 손들어 ② 움직이면 쏜다 ③ 문어/답어 ④ 누구냐 ⑤ 용무는 ⑥ 0보 앞 유도 ⑦ 신분확인." },
+          { id: 13, question: "피수하자 반응별 조치요령을 기술하시오.", answer: "순응 시 정상 수하 확인 조치, 미숙지 순응 시 적정거리 유도 신분확인, 불응 시 적 간주 사살/포획." },
+          { id: 14, question: "초병의 자격요건을 기술하시오.", answer: "경계교육 이수자, 담력과 기지 겸비자, 책임감 왕성자, 부대환경 숙지자, 신체 결격 없는 자." },
+          { id: 15, question: "KM18A1(크레모아) 설치 순서를 기술하시오.", answer: "① 지뢰검사 ② 회로점검 ③ 도전선 설치 ④ 지뢰설치/뇌관결합 ⑤ 조준 ⑥ 위장 후 이동 ⑦ 격발." },
+          { id: 16, question: "정밀진지 구축 절차 4단계를 기술하시오.", answer: "① 진지 경시 ② 흉벽 설치 ③ 진지 변형 ④ 엄개 설치." }
+        ]
+      }
+    };
+
+    /* ==========================================================================
+       2. 전역 상태 및 셔플 알고리즘
+       ========================================================================== */
+    let AppData = JSON.parse(localStorage.getItem('qbank_subjects_data')) || INITIAL_DATA;
+    let WrongData = JSON.parse(localStorage.getItem('qbank_wrong_data')) || [];
+    let CurrentExam = null;
+    let OcrFiles = [];
+    let CurrentStudyQuestions = [];
+
+    function shuffleArray(arr) {
+      const copy = [...arr];
+      for (let i = copy.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [copy[i], copy[j]] = [copy[j], copy[i]];
+      }
+      return copy;
+    }
+
+    function saveAppData() {
+      localStorage.setItem('qbank_subjects_data', JSON.stringify(AppData));
+      updateHeaderStats();
+    }
+
+    function saveWrongData() {
+      localStorage.setItem('qbank_wrong_data', JSON.stringify(WrongData));
+      updateWrongBadge();
+    }
+
+    function showToast(msg) {
+      const toast = document.getElementById('toast');
+      toast.innerHTML = `<i class="fa-solid fa-circle-info text-blue-400"></i> ${msg}`;
+      toast.classList.remove('translate-y-20', 'opacity-0');
+      setTimeout(() => {
+        toast.classList.add('translate-y-20', 'opacity-0');
+      }, 2300);
+    }
+
+    function updateHeaderStats() {
+      const subjects = Object.keys(AppData);
+      document.getElementById('headerSubjectCount').innerText = `${subjects.length}개`;
+      let total = 0;
+      subjects.forEach(s => {
+        total += (AppData[s].ox?.length || 0) + (AppData[s].fill?.length || 0) + (AppData[s].desc?.length || 0);
+      });
+      document.getElementById('headerQuestionCount').innerText = `${total}문항`;
+    }
+
+    function updateWrongBadge() {
+      const badge = document.getElementById('wrongBadge');
+      if (WrongData.length > 0) {
+        badge.innerText = WrongData.length;
+        badge.classList.remove('hidden');
+      } else {
+        badge.classList.add('hidden');
+      }
+    }
+
+    function switchTab(tabId) {
+      ['study', 'exam', 'wrong', 'ocr', 'manage'].forEach(t => {
+        document.getElementById(`view-${t}`).classList.add('hidden');
+        document.getElementById(`tab-${t}`).classList.remove('tab-active');
+      });
+      document.getElementById(`view-${tabId}`).classList.remove('hidden');
+      document.getElementById(`tab-${tabId}`).classList.add('tab-active');
+
+      if (tabId === 'study') renderStudySelects();
+      if (tabId === 'exam') renderExamSelects();
+      if (tabId === 'wrong') renderWrongList();
+      if (tabId === 'ocr') renderOcrSelects();
+      if (tabId === 'manage') renderManageTable();
+    }
+
+    /* ==========================================================================
+       3. ✏️ 문제 및 오탈자 수정 기능 (스크롤 위치 자동 보존 & 하이라이트)
+       ========================================================================== */
+    function openEditModal(subj, type, qId) {
+      if (!AppData[subj] || !AppData[subj][type]) return;
+      const item = AppData[subj][type].find(q => q.id === qId);
+      if (!item) return;
+
+      document.getElementById('editSubj').value = subj;
+      document.getElementById('editType').value = type;
+      document.getElementById('editQId').value = qId;
+
+      document.getElementById('editQuestionText').value = item.question || '';
+      document.getElementById('editAnswerText').value = item.answer || '';
+      document.getElementById('editExplanationText').value = item.explanation || '';
+
+      document.getElementById('editQuestionModal').classList.remove('hidden');
+    }
+
+    function closeEditModal() {
+      document.getElementById('editQuestionModal').classList.add('hidden');
+    }
+
+    function saveQuestionEdit() {
+      const subj = document.getElementById('editSubj').value;
+      const type = document.getElementById('editType').value;
+      const qId = parseInt(document.getElementById('editQId').value);
+      const newQ = document.getElementById('editQuestionText').value.trim();
+      const newA = document.getElementById('editAnswerText').value.trim();
+      const newExp = document.getElementById('editExplanationText').value.trim();
+
+      if (!newQ || !newA) {
+        showToast('문제와 정답은 필수 입력입니다.');
+        return;
+      }
+
+      if (AppData[subj] && AppData[subj][type]) {
+        const target = AppData[subj][type].find(q => q.id === qId);
+        if (target) {
+          target.question = newQ;
+          target.answer = newA;
+          if (newExp) target.explanation = newExp;
+          else delete target.explanation;
+        }
+      }
+
+      WrongData.forEach(w => {
+        if (w.subject === subj && w.type === type && w.id === qId) {
+          w.question = newQ;
+          w.answer = newA;
+          if (newExp) w.explanation = newExp;
+          else delete w.explanation;
+        }
+      });
+
+      CurrentStudyQuestions.forEach(item => {
+        if (item.subject === subj && item.type === type && item.id === qId) {
+          item.question = newQ;
+          item.answer = newA;
+          if (newExp) item.explanation = newExp;
+          else delete item.explanation;
+        }
+      });
+
+      saveAppData();
+      saveWrongData();
+      closeEditModal();
+
+      const isStudyTab = !document.getElementById('view-study').classList.contains('hidden');
+      const isWrongTab = !document.getElementById('view-wrong').classList.contains('hidden');
+
+      if (isStudyTab) renderStudyQuestionCards();
+      if (isWrongTab) renderWrongList();
+
+      setTimeout(() => {
+        const targetId = isStudyTab 
+          ? `card-study-${subj}-${type}-${qId}` 
+          : (isWrongTab ? `card-wrong-${subj}-${type}-${qId}` : null);
+
+        if (targetId) {
+          const targetCard = document.getElementById(targetId);
+          if (targetCard) {
+            targetCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            targetCard.classList.add('highlight-card');
+            setTimeout(() => {
+              targetCard.classList.remove('highlight-card');
+            }, 2000);
+          }
+        }
+      }, 50);
+
+      showToast('문제 내용이 성공적으로 수정되었습니다.');
+    }
+
+    /* ==========================================================================
+       4. 📖 유형별 학습 로직
+       ========================================================================== */
+    function renderStudySelects() {
+      const sel = document.getElementById('studySubjectSelect');
+      const cur = sel.value;
+      sel.innerHTML = Object.keys(AppData).map(s => `<option value="${s}">${s}</option>`).join('');
+      if (cur && AppData[cur]) sel.value = cur;
+      renderStudyQuestions();
+    }
+
+    function renderStudyQuestions() {
+      const subj = document.getElementById('studySubjectSelect').value;
+      const type = document.getElementById('studyTypeSelect').value;
+      if (!subj || !AppData[subj]) return;
+
+      let list = [];
+      if (type === 'all' || type === 'ox') {
+        (AppData[subj].ox || []).forEach(q => list.push({ ...q, type: 'ox', typeName: '진위형 (OX)', subject: subj }));
+      }
+      if (type === 'all' || type === 'fill') {
+        (AppData[subj].fill || []).forEach(q => list.push({ ...q, type: 'fill', typeName: '빈칸·단답형', subject: subj }));
+      }
+      if (type === 'all' || type === 'desc') {
+        (AppData[subj].desc || []).forEach(q => list.push({ ...q, type: 'desc', typeName: '기술형·서술형', subject: subj }));
+      }
+
+      CurrentStudyQuestions = list;
+      renderStudyQuestionCards();
+    }
+
+    function shuffleStudyQuestions() {
+      if (!CurrentStudyQuestions.length) return;
+      CurrentStudyQuestions = shuffleArray(CurrentStudyQuestions);
+      renderStudyQuestionCards();
+      showToast('문제가 무작위 순서로 재배열되었습니다.');
+    }
+
+    function renderStudyQuestionCards() {
+      const container = document.getElementById('studyQuestionList');
+      container.innerHTML = '';
+      document.getElementById('studyFilteredCount').innerText = CurrentStudyQuestions.length;
+
+      CurrentStudyQuestions.forEach((item, idx) => {
+        const card = document.createElement('div');
+        card.id = `card-study-${item.subject}-${item.type}-${item.id}`;
+        card.className = "bg-white p-4 sm:p-5 rounded-xl shadow-sm border border-slate-200 space-y-2.5";
+
+        let badgeColor = item.type === 'ox' ? 'bg-purple-100 text-purple-700' : (item.type === 'fill' ? 'bg-blue-100 text-blue-700' : 'bg-emerald-100 text-emerald-700');
+
+        card.innerHTML = `
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-1.5">
+              <span class="px-2 py-0.5 rounded text-[11px] font-bold ${badgeColor}">${item.typeName}</span>
+              <span class="text-xs text-slate-400 font-bold">Q${idx + 1}</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <button onclick="openEditModal('${item.subject}', '${item.type}', ${item.id})" class="text-xs text-blue-600 hover:text-blue-800 font-medium">
+                <i class="fa-solid fa-pen-to-square mr-0.5"></i> 수정
+              </button>
+              <button onclick="toggleWrongManual('${item.subject}', '${item.type}', ${item.id})" class="text-xs text-slate-400 hover:text-red-500 font-medium">
+                <i class="fa-solid fa-bookmark mr-0.5"></i> 오답등록
+              </button>
+            </div>
+          </div>
+          <p class="text-xs sm:text-sm font-semibold text-slate-800 leading-relaxed">${item.question}</p>
+          <div id="study-answer-box-${idx}" class="pt-1.5">
+            ${renderStudyInput(item, idx, item.subject)}
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    function renderStudyInput(item, idx, subj) {
+      if (item.type === 'ox') {
+        return `
+          <div class="flex gap-2">
+            <button onclick="checkStudyOx(${idx}, 'O', '${item.answer}', '${subj}', ${item.id})" class="px-4 py-1.5 border border-slate-300 hover:bg-blue-50 text-xs font-bold rounded-lg">O (참)</button>
+            <button onclick="checkStudyOx(${idx}, 'X', '${item.answer}', '${subj}', ${item.id})" class="px-4 py-1.5 border border-slate-300 hover:bg-red-50 text-xs font-bold rounded-lg">X (거짓)</button>
+          </div>
+          <div id="study-res-${idx}" class="hidden mt-2.5 p-2.5 rounded-lg text-xs leading-relaxed"></div>
+        `;
+      } else if (item.type === 'fill') {
+        return `
+          <div class="flex gap-1.5">
+            <input type="text" id="study-input-${idx}" placeholder="정답 입력" class="border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs flex-1 bg-slate-50" />
+            <button onclick="checkStudyFill(${idx}, '${item.answer}', '${subj}', ${item.id})" class="px-3.5 py-1.5 bg-slate-800 text-white text-xs font-bold rounded-lg">정답 확인</button>
+          </div>
+          <div id="study-res-${idx}" class="hidden mt-2.5 p-2.5 rounded-lg text-xs leading-relaxed"></div>
+        `;
+      } else {
+        return `
+          <button onclick="document.getElementById('study-res-${idx}').classList.toggle('hidden')" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-lg">
+            모범 답안 보기
+          </button>
+          <div id="study-res-${idx}" class="hidden mt-2.5 p-3 rounded-lg text-xs bg-slate-50 border border-slate-200 leading-relaxed text-slate-800">
+            <span class="font-bold text-emerald-700 block mb-1">【 모범 정답 】</span>
+            ${item.answer}
+          </div>
+        `;
+      }
+    }
+
+    function checkStudyOx(idx, userAns, correctAns, subj, qId) {
+      const resBox = document.getElementById(`study-res-${idx}`);
+      resBox.classList.remove('hidden');
+      if (userAns.toUpperCase() === correctAns.toUpperCase()) {
+        resBox.className = "mt-2.5 p-2.5 rounded-lg text-xs bg-emerald-50 border border-emerald-200 text-emerald-800 font-medium";
+        resBox.innerHTML = `<b>정답입니다!</b> (정답: ${correctAns})`;
+      } else {
+        resBox.className = "mt-2.5 p-2.5 rounded-lg text-xs bg-red-50 border border-red-200 text-red-800 font-medium";
+        resBox.innerHTML = `<b>오답입니다.</b> (정답: ${correctAns}) ➔ <i>오답노트에 자동 등록되었습니다.</i>`;
+        addWrongItem(subj, 'ox', qId);
+      }
+    }
+
+    function checkStudyFill(idx, correctAns, subj, qId) {
+      const userVal = document.getElementById(`study-input-${idx}`).value.trim();
+      const resBox = document.getElementById(`study-res-${idx}`);
+      resBox.classList.remove('hidden');
+
+      const norm = s => s.replace(/\s+/g, '').replace(/[^가-힣a-zA-Z0-9]/g, '');
+      const isCorrect = norm(userVal) === norm(correctAns) || correctAns.includes(userVal);
+
+      if (userVal && isCorrect) {
+        resBox.className = "mt-2.5 p-2.5 rounded-lg text-xs bg-emerald-50 border border-emerald-200 text-emerald-800 font-medium";
+        resBox.innerHTML = `<b>정답입니다!</b> (모범답안: ${correctAns})`;
+      } else {
+        resBox.className = "mt-2.5 p-2.5 rounded-lg text-xs bg-red-50 border border-red-200 text-red-800 font-medium";
+        resBox.innerHTML = `<b>오답입니다.</b> (모범답안: ${correctAns}) ➔ <i>오답노트에 자동 등록되었습니다.</i>`;
+        addWrongItem(subj, 'fill', qId);
+      }
+    }
+
+    /* ==========================================================================
+       5. 🎯 맞춤 & 전 과목 랜덤 모의고사 로직
+       ========================================================================== */
+    function renderExamSelects() {
+      const sel = document.getElementById('examSubjectSelect');
+      sel.innerHTML = Object.keys(AppData).map(s => `<option value="${s}">${s}</option>`).join('');
+      updateExamConfigLimits();
+    }
+
+    function updateExamConfigLimits() {
+      const subj = document.getElementById('examSubjectSelect').value;
+      if (!subj || !AppData[subj]) return;
+
+      const oxMax = AppData[subj].ox?.length || 0;
+      const fillMax = AppData[subj].fill?.length || 0;
+      const descMax = AppData[subj].desc?.length || 0;
+
+      document.getElementById('maxOxCount').innerText = oxMax;
+      document.getElementById('maxFillCount').innerText = fillMax;
+      document.getElementById('maxDescCount').innerText = descMax;
+
+      document.getElementById('examOxCount').max = oxMax;
+      document.getElementById('examFillCount').max = fillMax;
+      document.getElementById('examDescCount').max = descMax;
+
+      calcExamTotal();
+    }
+
+    function setExamPreset(ox, fill, desc) {
+      const subj = document.getElementById('examSubjectSelect').value;
+      const oxMax = AppData[subj].ox?.length || 0;
+      const fillMax = AppData[subj].fill?.length || 0;
+      const descMax = AppData[subj].desc?.length || 0;
+
+      document.getElementById('examOxCount').value = ox === 'max' ? oxMax : Math.min(ox, oxMax);
+      document.getElementById('examFillCount').value = fill === 'max' ? fillMax : Math.min(fill, fillMax);
+      document.getElementById('examDescCount').value = desc === 'max' ? descMax : Math.min(desc, descMax);
+
+      calcExamTotal();
+    }
+
+    function calcExamTotal() {
+      const ox = parseInt(document.getElementById('examOxCount').value) || 0;
+      const fill = parseInt(document.getElementById('examFillCount').value) || 0;
+      const desc = parseInt(document.getElementById('examDescCount').value) || 0;
+      document.getElementById('examTotalDisplay').innerText = `${ox + fill + desc}문항`;
+    }
+
+    function startQuickRandomExam(count) {
+      let pool = [];
+      Object.keys(AppData).forEach(subj => {
+        (AppData[subj].ox || []).forEach(q => pool.push({ ...q, type: 'ox', typeName: '진위형 (OX)', subject: subj }));
+        (AppData[subj].fill || []).forEach(q => pool.push({ ...q, type: 'fill', typeName: '빈칸·단답형', subject: subj }));
+        (AppData[subj].desc || []).forEach(q => pool.push({ ...q, type: 'desc', typeName: '기술형·서술형', subject: subj }));
+      });
+
+      if (!pool.length) {
+        showToast('등록된 문제가 없습니다.');
+        return;
+      }
+
+      const selected = shuffleArray(pool).slice(0, Math.min(count, pool.length));
+      CurrentExam = {
+        subject: `전 과목 무작위 랜덤 (${selected.length}제)`,
+        questions: selected,
+        userAnswers: {}
+      };
+
+      document.getElementById('examConfigCard').classList.add('hidden');
+      document.getElementById('examResultCard').classList.add('hidden');
+      document.getElementById('examPaperCard').classList.remove('hidden');
+
+      document.getElementById('examSubjectBadge').innerText = CurrentExam.subject;
+      document.getElementById('examProgressBadge').innerText = `총 ${selected.length}문항`;
+
+      renderExamPaper();
+    }
+
+    function startExam() {
+      const subj = document.getElementById('examSubjectSelect').value;
+      const oxCount = parseInt(document.getElementById('examOxCount').value) || 0;
+      const fillCount = parseInt(document.getElementById('examFillCount').value) || 0;
+      const descCount = parseInt(document.getElementById('examDescCount').value) || 0;
+
+      if (oxCount + fillCount + descCount === 0) {
+        showToast('출제할 문항 수를 1개 이상 지정하세요.');
+        return;
+      }
+
+      const selected = [
+        ...shuffleArray(AppData[subj].ox || []).slice(0, oxCount).map(q => ({ ...q, type: 'ox', typeName: '진위형 (OX)', subject: subj })),
+        ...shuffleArray(AppData[subj].fill || []).slice(0, fillCount).map(q => ({ ...q, type: 'fill', typeName: '빈칸·단답형', subject: subj })),
+        ...shuffleArray(AppData[subj].desc || []).slice(0, descCount).map(q => ({ ...q, type: 'desc', typeName: '기술형·서술형', subject: subj }))
+      ];
+
+      CurrentExam = {
+        subject: subj,
+        questions: shuffleArray(selected),
+        userAnswers: {}
+      };
+
+      document.getElementById('examConfigCard').classList.add('hidden');
+      document.getElementById('examResultCard').classList.add('hidden');
+      document.getElementById('examPaperCard').classList.remove('hidden');
+
+      document.getElementById('examSubjectBadge').innerText = subj;
+      document.getElementById('examProgressBadge').innerText = `총 ${CurrentExam.questions.length}문항`;
+
+      renderExamPaper();
+    }
+
+    function renderExamPaper() {
+      const container = document.getElementById('examQuestionsContainer');
+      container.innerHTML = '';
+
+      CurrentExam.questions.forEach((q, idx) => {
+        const card = document.createElement('div');
+        card.className = "bg-white p-4 sm:p-5 rounded-xl shadow-sm border border-slate-200 space-y-2.5";
+
+        let inputHtml = '';
+        if (q.type === 'ox') {
+          inputHtml = `
+            <div class="flex gap-4">
+              <label class="flex items-center gap-1.5 text-xs font-bold cursor-pointer">
+                <input type="radio" name="exam-ans-${idx}" value="O" onchange="CurrentExam.userAnswers[${idx}]='O'" /> O (참)
+              </label>
+              <label class="flex items-center gap-1.5 text-xs font-bold cursor-pointer">
+                <input type="radio" name="exam-ans-${idx}" value="X" onchange="CurrentExam.userAnswers[${idx}]='X'" /> X (거짓)
+              </label>
+            </div>
+          `;
+        } else if (q.type === 'fill') {
+          inputHtml = `
+            <input type="text" placeholder="단답형 정답 입력" oninput="CurrentExam.userAnswers[${idx}]=this.value" class="w-full border border-slate-300 rounded-lg px-2.5 py-1.5 text-xs bg-slate-50" />
+          `;
+        } else {
+          inputHtml = `
+            <textarea rows="3" placeholder="서술형 답변 작성 (제출 후 모범답안과 자가 비교)" oninput="CurrentExam.userAnswers[${idx}]=this.value" class="w-full border border-slate-300 rounded-lg p-2 text-xs bg-slate-50"></textarea>
+          `;
+        }
+
+        card.innerHTML = `
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-1.5">
+              <span class="px-2 py-0.5 rounded text-[11px] font-bold bg-slate-900 text-white">${q.subject || CurrentExam.subject}</span>
+              <span class="px-2 py-0.5 rounded text-[11px] font-bold bg-slate-100 text-slate-700">${q.typeName}</span>
+            </div>
+            <span class="text-xs text-slate-400 font-bold">#${idx + 1}</span>
+          </div>
+          <p class="text-xs sm:text-sm font-semibold text-slate-900 leading-relaxed">${q.question}</p>
+          <div class="pt-1.5">${inputHtml}</div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    function cancelExam() {
+      if (confirm('진행 중인 모의고사를 취소하시겠습니까?')) {
+        restartExamConfig();
+      }
+    }
+
+    function finishExam() {
+      let correct = 0;
+      const total = CurrentExam.questions.length;
+      const norm = s => (s || '').replace(/\s+/g, '').replace(/[^가-힣a-zA-Z0-9]/g, '');
+
+      CurrentExam.questions.forEach((q, idx) => {
+        const user = CurrentExam.userAnswers[idx] || '';
+        const subj = q.subject || CurrentExam.subject;
+        if (q.type === 'ox') {
+          if (user.toUpperCase() === q.answer.toUpperCase()) correct++;
+          else addWrongItem(subj, 'ox', q.id);
+        } else if (q.type === 'fill') {
+          if (user && (norm(user) === norm(q.answer) || q.answer.includes(user))) correct++;
+          else addWrongItem(subj, 'fill', q.id);
+        }
+      });
+
+      document.getElementById('examPaperCard').classList.add('hidden');
+      document.getElementById('examResultCard').classList.remove('hidden');
+
+      const score = Math.round((correct / total) * 100);
+      document.getElementById('examScoreRate').innerText = `${score}점 / 100점`;
+      document.getElementById('examScoreDetail').innerText = `총 ${total}문항 중 ${correct}문항 정답 (자동채점 기준)`;
+      showToast('모의고사가 채점되었습니다.');
+    }
+
+    function restartExamConfig() {
+      document.getElementById('examPaperCard').classList.add('hidden');
+      document.getElementById('examResultCard').classList.add('hidden');
+      document.getElementById('examConfigCard').classList.remove('hidden');
+    }
+
+    /* ==========================================================================
+       6. 🚨 오답노트 관리
+       ========================================================================== */
+    function addWrongItem(subj, type, qId) {
+      if (!AppData[subj] || !AppData[subj][type]) return;
+      const origin = AppData[subj][type].find(q => q.id === qId);
+      if (!origin) return;
+
+      const exists = WrongData.some(w => w.subject === subj && w.type === type && w.id === qId);
+      if (!exists) {
+        WrongData.push({ ...origin, subject: subj, type: type });
+        saveWrongData();
+      }
+    }
+
+    function toggleWrongManual(subj, type, qId) {
+      addWrongItem(subj, type, qId);
+      showToast('오답노트에 등록되었습니다.');
+    }
+
+    function renderWrongList() {
+      const container = document.getElementById('wrongListContainer');
+      container.innerHTML = '';
+
+      if (WrongData.length === 0) {
+        container.innerHTML = `
+          <div class="bg-white p-8 rounded-xl text-center text-slate-400 border border-slate-200">
+            <i class="fa-solid fa-circle-check text-3xl text-emerald-400 mb-1.5"></i>
+            <p class="text-xs sm:text-sm font-semibold">오답 보관함이 비어있습니다!</p>
+          </div>
+        `;
+        return;
+      }
+
+      WrongData.forEach((item, idx) => {
+        const card = document.createElement('div');
+        card.id = `card-wrong-${item.subject}-${item.type}-${item.id}`;
+        card.className = "bg-white p-4 sm:p-5 rounded-xl shadow-sm border border-slate-200 space-y-2.5";
+        card.innerHTML = `
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-1.5">
+              <span class="px-2 py-0.5 rounded text-[11px] font-bold bg-slate-900 text-white">${item.subject}</span>
+              <span class="px-2 py-0.5 rounded text-[11px] font-bold bg-amber-100 text-amber-800">${item.type.toUpperCase()}</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <button onclick="openEditModal('${item.subject}', '${item.type}', ${item.id})" class="text-xs text-blue-600 hover:text-blue-800 font-medium">
+                <i class="fa-solid fa-pen-to-square mr-0.5"></i> 수정
+              </button>
+              <button onclick="removeWrongItem(${idx})" class="text-xs text-red-500 hover:text-red-700 font-bold">
+                <i class="fa-solid fa-trash-can mr-0.5"></i> 삭제
+              </button>
+            </div>
+          </div>
+          <p class="text-xs sm:text-sm font-semibold text-slate-800">${item.question}</p>
+          <div class="p-2.5 bg-slate-50 rounded-lg text-xs space-y-1">
+            <p><span class="font-bold text-blue-600">정답:</span> ${item.answer}</p>
+            ${item.explanation ? `<p><span class="font-bold text-slate-500">해설:</span> ${item.explanation}</p>` : ''}
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    function removeWrongItem(idx) {
+      WrongData.splice(idx, 1);
+      saveWrongData();
+      renderWrongList();
+      showToast('오답 항목이 삭제되었습니다.');
+    }
+
+    function clearAllWrong() {
+      if (confirm('오답노트 전체를 비우시겠습니까?')) {
+        WrongData = [];
+        saveWrongData();
+        renderWrongList();
+        showToast('오답노트가 초기화되었습니다.');
+      }
+    }
+
+    function startWrongExam() {
+      if (WrongData.length === 0) {
+        showToast('오답노트에 문제가 없습니다.');
+        return;
+      }
+      switchTab('exam');
+      CurrentExam = {
+        subject: "오답노트 무작위",
+        questions: shuffleArray(WrongData),
+        userAnswers: {}
+      };
+      document.getElementById('examConfigCard').classList.add('hidden');
+      document.getElementById('examResultCard').classList.add('hidden');
+      document.getElementById('examPaperCard').classList.remove('hidden');
+      document.getElementById('examSubjectBadge').innerText = "오답 무작위 모의고사";
+      document.getElementById('examProgressBadge').innerText = `총 ${CurrentExam.questions.length}문항`;
+      renderExamPaper();
+    }
+
+    /* ==========================================================================
+       7. 📷 Gemini AI 다중 사진 자동 문제 추출
+       ========================================================================== */
+    function renderOcrSelects() {
+      const sel = document.getElementById('ocrTargetSubject');
+      sel.innerHTML = Object.keys(AppData).map(s => `<option value="${s}">${s}</option>`).join('');
+      const savedKey = localStorage.getItem('gemini_api_key') || '';
+      document.getElementById('geminiApiKey').value = savedKey;
+    }
+
+    function saveApiKey() {
+      const key = document.getElementById('geminiApiKey').value.trim();
+      localStorage.setItem('gemini_api_key', key);
+      showToast('Gemini API 키가 저장되었습니다.');
+    }
+
+    function handleOcrFiles(event) {
+      const files = Array.from(event.target.files);
+      if (!files.length) return;
+      OcrFiles = files;
+    }
+
+    async function runBatchOcr() {
+      const apiKey = document.getElementById('geminiApiKey').value.trim();
+      if (!apiKey) {
+        showToast('Gemini API Key를 먼저 입력 및 저장하세요.');
+        return;
+      }
+      if (OcrFiles.length === 0) {
+        showToast('분석할 사진을 선택하세요.');
+        return;
+      }
+
+      let targetSubj = document.getElementById('ocrTargetSubject').value;
+      const newSubj = document.getElementById('ocrNewSubjectName').value.trim();
+      if (newSubj) {
+        targetSubj = newSubj;
+        if (!AppData[targetSubj]) AppData[targetSubj] = { ox: [], fill: [], desc: [] };
+      }
+
+      const progressCard = document.getElementById('ocrProgressCard');
+      const progressBar = document.getElementById('ocrProgressBar');
+      const progressStatus = document.getElementById('ocrProgressStatus');
+      const progressPercent = document.getElementById('ocrProgressPercent');
+      progressCard.classList.remove('hidden');
+
+      const fileToBase64 = file => new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = () => resolve(reader.result.split(',')[1]);
+        reader.onerror = error => reject(error);
+      });
+
+      let addedCount = 0;
+
+      for (let i = 0; i < OcrFiles.length; i++) {
+        const file = OcrFiles[i];
+        const pct = Math.round(((i + 1) / OcrFiles.length) * 100);
+        progressStatus.innerText = `사진 ${i + 1}/${OcrFiles.length}장 분석 중 (${file.name})...`;
+        progressBar.style.width = `${pct}%`;
+        progressPercent.innerText = `${pct}%`;
+
+        try {
+          const base64Data = await fileToBase64(file);
+          const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              contents: [{
+                parts: [
+                  {
+                    text: `이 시험지 이미지에서 문제, 정답, 해설을 정확하게 추출하여 다음 JSON 형식으로만 응답하세요. 다른 설명 텍스트 없이 순수 JSON만 출력하세요:
+                    {
+                      "ox": [{"id": number, "question": string, "answer": "O"|"X", "explanation": string}],
+                      "fill": [{"id": number, "question": string, "answer": string}],
+                      "desc": [{"id": number, "question": string, "answer": string}]
+                    }`
+                  },
+                  { inline_data: { mime_type: file.type || "image/jpeg", data: base64Data } }
+                ]
+              }]
+            })
+          });
+
+          if (!response.ok) throw new Error(`HTTP ${response.status}`);
+          const resJson = await response.json();
+          let rawText = resJson.candidates[0].content.parts[0].text;
+          rawText = rawText.replace(/```json/g, '').replace(/```/g, '').trim();
+          const parsed = JSON.parse(rawText);
+
+          if (!AppData[targetSubj]) AppData[targetSubj] = { ox: [], fill: [], desc: [] };
+          ['ox', 'fill', 'desc'].forEach(type => {
+            if (Array.isArray(parsed[type])) {
+              parsed[type].forEach(q => {
+                const nextId = (AppData[targetSubj][type].length || 0) + 1;
+                AppData[targetSubj][type].push({ ...q, id: nextId });
+                addedCount++;
+              });
+            }
+          });
+        } catch (err) {
+          console.error(err);
+          showToast(`사진 ${i + 1} 분석 중 오류: ${err.message}`);
+        }
+      }
+
+      saveAppData();
+      progressCard.classList.add('hidden');
+      OcrFiles = [];
+      showToast(`총 ${addedCount}개 문제가 '${targetSubj}' 과목에 등록되었습니다.`);
+    }
+
+    /* ==========================================================================
+       8. ⚙️ 과목 및 데이터 백업 관리
+       ========================================================================== */
+    function renderManageTable() {
+      const container = document.getElementById('subjectManageTableContainer');
+      let html = `
+        <table class="w-full text-xs text-left text-slate-600 border border-slate-200">
+          <thead class="bg-slate-100 text-slate-700 font-bold border-b border-slate-200">
+            <tr>
+              <th class="p-2.5">과목명</th>
+              <th class="p-2.5">OX</th>
+              <th class="p-2.5">단답형</th>
+              <th class="p-2.5">기술형</th>
+              <th class="p-2.5">합계</th>
+              <th class="p-2.5 text-right">관리</th>
+            </tr>
+          </thead>
+          <tbody>
+      `;
+
+      Object.keys(AppData).forEach(subj => {
+        const ox = AppData[subj].ox?.length || 0;
+        const fill = AppData[subj].fill?.length || 0;
+        const desc = AppData[subj].desc?.length || 0;
+        html += `
+          <tr class="border-b border-slate-100 hover:bg-slate-50">
+            <td class="p-2.5 font-bold text-slate-900">${subj}</td>
+            <td class="p-2.5">${ox}제</td>
+            <td class="p-2.5">${fill}제</td>
+            <td class="p-2.5">${desc}제</td>
+            <td class="p-2.5 font-bold text-blue-600">${ox + fill + desc}제</td>
+            <td class="p-2.5 text-right">
+              <button onclick="deleteSubject('${subj}')" class="text-red-500 hover:text-red-700 font-bold">삭제</button>
+            </td>
+          </tr>
+        `;
+      });
+
+      html += `</tbody></table>`;
+      container.innerHTML = html;
+    }
+
+    function addNewSubject() {
+      const name = document.getElementById('newSubjectInput').value.trim();
+      if (!name) return;
+      if (AppData[name]) {
+        showToast('이미 존재하는 과목입니다.');
+        return;
+      }
+      AppData[name] = { ox: [], fill: [], desc: [] };
+      saveAppData();
+      document.getElementById('newSubjectInput').value = '';
+      renderManageTable();
+      showToast(`'${name}' 과목이 추가되었습니다.`);
+    }
+
+    function deleteSubject(subj) {
+      if (confirm(`'${subj}' 과목과 포함된 모든 문제를 삭제하시겠습니까?`)) {
+        delete AppData[subj];
+        saveAppData();
+        renderManageTable();
+        showToast(`'${subj}' 과목이 삭제되었습니다.`);
+      }
+    }
+
+    function exportJsonFile() {
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(AppData, null, 2));
+      const a = document.createElement('a');
+      a.setAttribute("href", dataStr);
+      a.setAttribute("download", `qbank_exam_data_${new Date().toISOString().slice(0,10)}.json`);
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      showToast('JSON 파일이 다운로드되었습니다.');
+    }
+
+    function openJsonModal(mode) {
+      const modal = document.getElementById('jsonModal');
+      const title = document.getElementById('jsonModalTitle');
+      const textarea = document.getElementById('jsonModalTextarea');
+      const actionBtn = document.getElementById('jsonModalActionBtn');
+
+      modal.classList.remove('hidden');
+
+      if (mode === 'export') {
+        title.innerText = 'JSON 데이터 내보내기 / 복사';
+        textarea.value = JSON.stringify(AppData, null, 2);
+        actionBtn.innerText = '클립보드 전체 복사';
+        actionBtn.onclick = () => {
+          textarea.select();
+          navigator.clipboard.writeText(textarea.value);
+          showToast('JSON 텍스트가 복사되었습니다.');
+          closeJsonModal();
+        };
+      } else {
+        title.innerText = 'JSON 데이터 붙여넣기 불러오기';
+        textarea.value = '';
+        textarea.placeholder = '복사한 JSON 문자열을 여기에 붙여넣으세요...';
+        actionBtn.innerText = '데이터 덮어쓰기 적용';
+        actionBtn.onclick = () => {
+          try {
+            const parsed = JSON.parse(textarea.value);
+            AppData = parsed;
+            saveAppData();
+            renderManageTable();
+            closeJsonModal();
+            showToast('새 JSON 데이터가 적용되었습니다.');
+          } catch (e) {
+            showToast('유효하지 않은 JSON 포맷입니다.');
+          }
+        };
+      }
+    }
+
+    function closeJsonModal() {
+      document.getElementById('jsonModal').classList.add('hidden');
+    }
+
+    function resetToInitialData() {
+      if (confirm('기본 6개 과목 384문항 상태로 데이터를 리셋하시겠습니까?')) {
+        AppData = JSON.parse(JSON.stringify(INITIAL_DATA));
+        saveAppData();
+        renderManageTable();
+        showToast('기본 데이터로 복원되었습니다.');
+      }
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      updateHeaderStats();
+      updateWrongBadge();
+      renderStudySelects();
+    });
+  </script>
+</body>
+</html>
+
