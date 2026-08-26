@@ -55,6 +55,16 @@
         
         <!-- 상단 헤더 -->
         <header class="text-center space-y-3 relative border-b border-slate-800 pb-5">
+            <!-- 우측 상단 글자 크기 조절 UI -->
+            <div class="sm:absolute sm:right-0 sm:top-0 flex justify-center sm:justify-end mb-1 sm:mb-0">
+                <div class="flex items-center gap-1.5 bg-slate-800/90 border border-slate-700/80 px-3 py-1 rounded-full text-xs shadow-md">
+                    <span class="text-[11px] text-amber-300 font-bold">🔍 글자크기</span>
+                    <button onclick="changeFontSize(-1)" title="글자 축소" class="w-6 h-6 flex items-center justify-center bg-slate-700 hover:bg-slate-600 rounded-full font-extrabold text-white text-xs transition active:scale-90">－</button>
+                    <span id="font-size-indicator" class="font-mono text-[11px] text-emerald-400 font-bold px-0.5 min-w-[34px] text-center">100%</span>
+                    <button onclick="changeFontSize(1)" title="글자 확대" class="w-6 h-6 flex items-center justify-center bg-slate-700 hover:bg-slate-600 rounded-full font-extrabold text-white text-xs transition active:scale-90">＋</button>
+                </div>
+            </div>
+
             <h1 class="text-2xl sm:text-3xl font-extrabold text-emerald-400 tracking-tight">
                 특부후 264기 임관식 배치도
             </h1>
@@ -190,7 +200,7 @@
             <div class="space-y-2.5 leading-relaxed">
                 <p>1. 성명(예: 박철완) 또는 교번을 입력하시고 <strong>[조회하기]</strong> 버튼을 누르시면 좌석 위치와 여단이 주황색으로 강조 표시됩니다.</p>
                 <p>2. 현재 시점은 상단이 <strong>단상(사열대)</strong>이며, 좌측에 <strong>제2제대</strong>, 우측에 <strong>제1제대</strong>가 배치되어 사열대 관람 구도와 일치합니다.</p>
-                <p>3. 상단의 <strong>[🔄 시점 변환]</strong> 버튼을 누르면 단상이 하단으로 가면서 현장 배치 구도로 언제든지 전환할 수 있습니다.</p>
+                <p>3. 상단 우측의 <strong>[🔍 글자크기: ＋ / －]</strong> 버튼으로 대열 속 후보생 이름을 편하게 확대/축소할 수 있습니다.</p>
                 <p>4. 자리 이동 모드(ON) 시 스마트폰 드래그 또는 터치로 자리를 즉시 변경할 수 있습니다.</p>
             </div>
             <button onclick="toggleModal('notice-modal')" class="w-full bg-amber-600 hover:bg-amber-500 text-white font-semibold py-2 rounded-lg text-xs transition">
@@ -402,6 +412,46 @@
         let mobileClone = null;
         let mobileDropTarget = null;
 
+        /* 글자 크기 조절 단계 정의 */
+        const fontScales = [
+            { label: "85%", name: "9px", note: "6.5px", minH: "38px", pad: "2px" },
+            { label: "100%", name: "10.5px", note: "7.5px", minH: "44px", pad: "4px" },
+            { label: "120%", name: "12.5px", note: "9px", minH: "50px", pad: "5px" },
+            { label: "140%", name: "14.5px", note: "10.5px", minH: "56px", pad: "6px" },
+            { label: "160%", name: "17px", note: "12px", minH: "64px", pad: "7px" }
+        ];
+        let currentFontStep = 1; // 기본 100%
+
+        function changeFontSize(delta) {
+            currentFontStep = Math.max(0, Math.min(fontScales.length - 1, currentFontStep + delta));
+            applyFontScale();
+        }
+
+        function applyFontScale() {
+            const conf = fontScales[currentFontStep];
+            const indicator = document.getElementById('font-size-indicator');
+            if (indicator) indicator.innerText = conf.label;
+
+            let styleEl = document.getElementById('dynamic-font-scale');
+            if (!styleEl) {
+                styleEl = document.createElement('style');
+                styleEl.id = 'dynamic-font-scale';
+                document.head.appendChild(styleEl);
+            }
+            styleEl.innerHTML = `
+                .trainee-seat-btn {
+                    min-height: ${conf.minH} !important;
+                    padding: ${conf.pad} !important;
+                }
+                .trainee-name-text {
+                    font-size: ${conf.name} !important;
+                }
+                .trainee-note-text {
+                    font-size: ${conf.note} !important;
+                }
+            `;
+        }
+
         function resetToSourceData() {
             if (confirm("현재 수정한 내용을 모두 취소하고 코드의 원본 명단으로 되돌리시겠습니까?")) {
                 localStorage.removeItem('traineeList_264');
@@ -478,6 +528,7 @@
         function renderBoard() {
             renderSpecialLeaders();
             renderEchelonsContainer();
+            applyFontScale();
         }
 
         function renderSpecialLeaders() {
@@ -596,10 +647,10 @@
                         const isSelected = selectedSeatForSwap && selectedSeatForSwap.type === 'grid' && selectedSeatForSwap.ech === echelonNum && selectedSeatForSwap.col === c && selectedSeatForSwap.row === r;
                         const brigadeClass = getBrigadeStyle(person.note);
 
-                        seatBtn.className = `p-1 rounded border text-center min-h-[44px] transition ${isSelected ? 'selected-swap' : brigadeClass} border-slate-700/80 hover:border-emerald-500 flex flex-col items-center justify-center relative shadow-sm`;
+                        seatBtn.className = `p-1 rounded border text-center min-h-[44px] trainee-seat-btn transition ${isSelected ? 'selected-swap' : brigadeClass} border-slate-700/80 hover:border-emerald-500 flex flex-col items-center justify-center relative shadow-sm`;
                         seatBtn.innerHTML = `
-                            <span class="font-extrabold text-slate-100 text-[10.5px] leading-tight">${person.name}</span>
-                            ${person.note ? `<span class="text-[7.5px] font-bold text-amber-200 bg-black/40 px-1 rounded block leading-tight mt-0.5 max-w-[62px] truncate">${person.note}</span>` : ''}
+                            <span class="font-extrabold text-slate-100 text-[10.5px] leading-tight trainee-name-text">${person.name}</span>
+                            ${person.note ? `<span class="text-[7.5px] font-bold text-amber-200 bg-black/40 px-1 rounded block leading-tight mt-0.5 max-w-[70px] truncate trainee-note-text">${person.note}</span>` : ''}
                         `;
 
                         if (isDragMode) {
@@ -618,7 +669,7 @@
                             else openDetailModal(person);
                         };
                     } else {
-                        seatBtn.className = "bg-slate-900/40 border border-slate-800/80 rounded min-h-[44px]";
+                        seatBtn.className = "bg-slate-900/40 border border-slate-800/80 rounded min-h-[44px] trainee-seat-btn";
                         if (isDragMode) {
                             seatBtn.ondragover = (e) => handleDesktopDragOver(e, seatBtn);
                             seatBtn.ondragleave = () => seatBtn.classList.remove('drag-over');
@@ -1067,6 +1118,13 @@
                 const el = docClone.querySelector('#' + id);
                 if (el) el.innerHTML = '';
             });
+
+            // 동적 글자크기 스타일 태그 및 인디케이터 초기화
+            const dynamicStyle = docClone.querySelector('#dynamic-font-scale');
+            if (dynamicStyle) dynamicStyle.remove();
+
+            const fontInd = docClone.querySelector('#font-size-indicator');
+            if (fontInd) fontInd.innerText = '100%';
 
             const banner = docClone.querySelector('#search-result-banner');
             if (banner) banner.className = 'hidden p-3 rounded-lg text-sm text-center font-semibold';
