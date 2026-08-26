@@ -380,18 +380,21 @@
         const ADMIN_PW = "1989";
         const TOTAL_ROWS = 16;
         
-        let traineesData = JSON.parse(localStorage.getItem('traineeList_264')) || [
-            ...echelon1Data.map(t => ({ ech: 1, ...t })),
-            ...echelon2Data.map(t => ({ ech: 2, ...t }))
-        ];
+        function loadInitialData() {
+            return [
+                ...echelon1Data.map(t => ({ ech: 1, ...t })),
+                ...echelon2Data.map(t => ({ ech: 2, ...t }))
+            ];
+        }
 
-        let specialLeaders = JSON.parse(localStorage.getItem('specialLeaders_264')) || [...specialLeadersDefault];
+        let traineesData = loadInitialData();
+        let specialLeaders = JSON.parse(JSON.stringify(specialLeadersDefault));
         specialLeaders.forEach(s => { 
             if (s.title === "통합 지휘자" || s.title === "교육대 지휘자") s.title = "지휘자"; 
         });
 
         let isDragMode = false;
-        let isStageBottomView = false; // 최초 기본 시점: 단상 상단 (사열대 관람 모드)
+        let isStageBottomView = false;
         let selectedSeatForSwap = null;
         let draggedSeatSource = null;
 
@@ -399,7 +402,18 @@
         let mobileClone = null;
         let mobileDropTarget = null;
 
-        /* 여단별 고유 색상 태그 CSS 맵핑 */
+        function resetToSourceData() {
+            if (confirm("현재 수정한 내용을 모두 취소하고 코드의 원본 명단으로 되돌리시겠습니까?")) {
+                localStorage.removeItem('traineeList_264');
+                localStorage.removeItem('specialLeaders_264');
+                traineesData = loadInitialData();
+                specialLeaders = JSON.parse(JSON.stringify(specialLeadersDefault));
+                renderBoard();
+                openAdminModal();
+                alert("코드 원본 데이터로 초기화되었습니다.");
+            }
+        }
+
         function getBrigadeStyle(note) {
             if (!note) return 'bg-slate-900/80 border-slate-700 text-slate-100';
             if (note.includes('1공수')) return 'bg-red-950/80 border-red-500/80 text-red-200';
@@ -413,7 +427,6 @@
             return 'bg-indigo-950/80 border-indigo-500/80 text-indigo-200';
         }
 
-        /* 시점 반전 토글 */
         function toggleViewPerspective() {
             isStageBottomView = !isStageBottomView;
             const btn = document.getElementById('view-mode-btn');
@@ -486,7 +499,6 @@
                 ech1Container.appendChild(createSpecialLeaderCard(ech1Leader, getBrigadeStyle(ech1Leader.note)));
                 ech2Container.appendChild(createSpecialLeaderCard(ech2Leader, getBrigadeStyle(ech2Leader.note)));
             } else {
-                // 단상 상단 시점: 좌측 2제대장 (정형관), 우측 1제대장 (박인혁)
                 ech1Container.appendChild(createSpecialLeaderCard(ech2Leader, getBrigadeStyle(ech2Leader.note)));
                 ech2Container.appendChild(createSpecialLeaderCard(ech1Leader, getBrigadeStyle(ech1Leader.note)));
             }
@@ -536,7 +548,6 @@
                 container.appendChild(divider);
                 container.appendChild(createEchelonElement(2, [1, 2, 3, 4, 5], "제2제대 (5개 열)", "text-emerald-300", "border-emerald-300"));
             } else {
-                // 단상 상단 시점: 좌측 제2제대(5~1열), 우측 제1제대(5~1열)
                 container.appendChild(createEchelonElement(2, [5, 4, 3, 2, 1], "제2제대 (5개 열)", "text-emerald-300", "border-emerald-300"));
                 const divider = document.createElement('div');
                 divider.className = "w-px bg-slate-800 self-stretch my-2";
@@ -626,7 +637,6 @@
             return wrapper;
         }
 
-        /* 스마트폰 터치 드래그 앤 드롭 바인딩 */
         function bindMobileTouch(elem, ech, col, row) {
             elem.addEventListener("touchstart", function (e) {
                 if (!isDragMode) return;
@@ -747,7 +757,6 @@
             });
         }
 
-        /* 데스크톱 마우스 드래그 핸들러 */
         function handleDesktopDragStart(e, ech, col, row) {
             if (!isDragMode) return;
             draggedSeatSource = { type: 'grid', ech, col, row };
@@ -793,7 +802,6 @@
             draggedSeatSource = null;
         }
 
-        /* 원터치 선택식 자리 맞교환 */
         function handleSeatClickForSwap(ech, col, row) {
             if (!selectedSeatForSwap) {
                 selectedSeatForSwap = { type: 'grid', ech, col, row };
@@ -816,7 +824,6 @@
             }
         }
 
-        /* 좌석 교환 및 이동 공통 처리 */
         function swapOrMoveSeat(src, tar) {
             if (!src || !tar) return;
 
@@ -862,8 +869,6 @@
                 }
             }
 
-            localStorage.setItem('traineeList_264', JSON.stringify(traineesData));
-            localStorage.setItem('specialLeaders_264', JSON.stringify(specialLeaders));
             renderBoard();
 
             const banner = document.getElementById('search-result-banner');
@@ -874,7 +879,6 @@
             banner.classList.remove('hidden');
         }
 
-        /* 검색 기능 */
         function executeSearch() {
             const n = document.getElementById('search-number').value.trim();
             const m = document.getElementById('search-name').value.trim();
@@ -926,7 +930,6 @@
             document.getElementById('search-result-banner').classList.add('hidden');
         }
 
-        /* 관리자 기능 */
         function checkAdminPassword() {
             const pass = prompt("관리자 비밀번호를 입력하세요:");
             if (pass === ADMIN_PW) openAdminModal();
@@ -940,7 +943,7 @@
                     <button onclick="toggleModal('detail-modal')" class="text-slate-400 hover:text-white text-lg">×</button>
                 </div>
 
-                <div class="bg-emerald-950/40 border border-emerald-500/40 p-3 rounded-xl mb-4 space-y-2">
+                <div class="bg-emerald-950/40 border border-emerald-500/40 p-3 rounded-xl mb-3 space-y-2">
                     <div class="flex items-center justify-between">
                         <span class="text-xs font-bold text-emerald-300">배포용 index.html 파일 생성</span>
                         <span class="text-[10px] text-slate-400">Vercel/GitHub에 덮어쓰기 가능</span>
@@ -955,7 +958,13 @@
                     </div>
                 </div>
 
-                <details class="bg-slate-800/60 border border-slate-700 rounded-xl p-2.5 mb-4 group">
+                <div class="mb-3">
+                    <button onclick="resetToSourceData()" class="w-full bg-slate-800 hover:bg-slate-700 text-amber-300 border border-amber-500/30 font-semibold py-1.5 rounded-lg text-xs transition">
+                        🔄 코드 원본 데이터로 초기화 (수정사항 취소)
+                    </button>
+                </div>
+
+                <details class="bg-slate-800/60 border border-slate-700 rounded-xl p-2.5 mb-3 group">
                     <summary class="text-xs font-semibold text-amber-300 cursor-pointer flex items-center justify-between">
                         <span>엑셀/CSV 텍스트 직접 붙여넣어 일괄 적용하기</span>
                         <span class="text-[10px] text-slate-400 group-open:rotate-180 transition">▼</span>
@@ -974,12 +983,12 @@
                 <div class="flex justify-between items-center mb-2">
                     <span class="text-xs font-bold text-slate-300">개별 명단 및 여단 수정 (${traineesData.length}명)</span>
                     <div class="flex gap-1.5">
-                        <button onclick="exportCSV()" class="bg-slate-700 hover:bg-slate-600 text-slate-200 text-[11px] px-2.5 py-1 rounded">CSV 파일 다운로드</button>
-                        <button onclick="document.getElementById('csvFileInput').click()" class="bg-blue-600 hover:bg-blue-500 text-white text-[11px] px-2.5 py-1 rounded">CSV 파일 업로드</button>
+                        <button onclick="exportCSV()" class="bg-slate-700 hover:bg-slate-600 text-slate-200 text-[11px] px-2.5 py-1 rounded">CSV 다운로드</button>
+                        <button onclick="document.getElementById('csvFileInput').click()" class="bg-blue-600 hover:bg-blue-500 text-white text-[11px] px-2.5 py-1 rounded">CSV 업로드</button>
                     </div>
                 </div>
 
-                <div class="max-h-52 overflow-y-auto space-y-1 mb-4 pr-1 custom-scrollbar bg-slate-950/60 p-2 rounded-lg border border-slate-800">
+                <div class="max-h-48 overflow-y-auto space-y-1 mb-3 pr-1 custom-scrollbar bg-slate-950/60 p-2 rounded-lg border border-slate-800">
                     <div class="flex gap-1 text-[10px] text-slate-400 mb-1 px-1 font-semibold">
                         <span class="w-12 text-center">제대</span>
                         <span class="w-8 text-center">열</span>
@@ -1007,7 +1016,7 @@
 
                 <div class="flex gap-2">
                     <button onclick="add()" class="flex-1 bg-slate-800 hover:bg-slate-700 text-slate-200 py-2 rounded-lg text-xs">+ 인원 추가</button>
-                    <button onclick="saveLocalOnly()" class="flex-1 bg-slate-700 hover:bg-slate-600 text-slate-100 font-bold py-2 rounded-lg text-xs">이 기기에만 임시 저장</button>
+                    <button onclick="saveLocalOnly()" class="flex-1 bg-slate-700 hover:bg-slate-600 text-slate-100 font-bold py-2 rounded-lg text-xs">확인 (현재 화면 적용)</button>
                 </div>
             `;
             document.getElementById('detail-modal').classList.remove('hidden');
@@ -1040,10 +1049,54 @@
                 `            { col: ${t.col}, row: ${t.row}, number: "${t.number}", name: "${t.name}", note: "${t.note || ''}" }`
             ).join(',\n');
 
-            let currentDoc = document.documentElement.outerHTML;
-            currentDoc = currentDoc.replace(/const echelon1Data = \[\s*[\s\S]*?\n\s*\];/, `const echelon1Data = [\n${formatArr(ech1List)}\n        ];`);
-            currentDoc = currentDoc.replace(/const echelon2Data = \[\s*[\s\S]*?\n\s*\];/, `const echelon2Data = [\n${formatArr(ech2List)}\n        ];`);
-            return "<!DOCTYPE html>\n" + currentDoc;
+            const formatLeaders = (arr) => arr.map(l =>
+                `            { id: "${l.id}", number: "${l.number}", name: "${l.name}", note: "${l.note || ''}", title: "${l.title}" }`
+            ).join(',\n');
+
+            const docClone = document.documentElement.cloneNode(true);
+
+            const dynamicIds = [
+                'echelons-container', 
+                'ech1-leader-container', 
+                'ech2-leader-container', 
+                'commander-card-container', 
+                'modal-content', 
+                'search-result-banner'
+            ];
+            dynamicIds.forEach(id => {
+                const el = docClone.querySelector('#' + id);
+                if (el) el.innerHTML = '';
+            });
+
+            const banner = docClone.querySelector('#search-result-banner');
+            if (banner) banner.className = 'hidden p-3 rounded-lg text-sm text-center font-semibold';
+
+            const detailModal = docClone.querySelector('#detail-modal');
+            if (detailModal) detailModal.classList.add('hidden');
+
+            const noticeModal = docClone.querySelector('#notice-modal');
+            if (noticeModal) noticeModal.classList.add('hidden');
+
+            const searchName = docClone.querySelector('#search-name');
+            if (searchName) searchName.value = '';
+            const searchNum = docClone.querySelector('#search-number');
+            if (searchNum) searchNum.value = '';
+
+            const dragMsg = docClone.querySelector('#drag-status-msg');
+            if (dragMsg) dragMsg.classList.add('hidden');
+            const dragBtn = docClone.querySelector('#drag-toggle-btn');
+            if (dragBtn) {
+                dragBtn.className = "bg-sky-500/20 hover:bg-sky-500/30 text-sky-300 text-xs px-3 py-1.5 rounded-full border border-sky-500/40 transition font-medium";
+                dragBtn.innerText = "🖐️ 자리 이동 모드: OFF";
+            }
+
+            let cleanDocHTML = docClone.outerHTML;
+
+            cleanDocHTML = cleanDocHTML.replace(/const echelon1Data = \[\s*[\s\S]*?\n\s*\];/, `const echelon1Data = [\n${formatArr(ech1List)}\n        ];`);
+            cleanDocHTML = cleanDocHTML.replace(/const echelon2Data = \[\s*[\s\S]*?\n\s*\];/, `const echelon2Data = [\n${formatArr(ech2List)}\n        ];`);
+            cleanDocHTML = cleanDocHTML.replace(/const specialLeadersDefault = \[\s*[\s\S]*?\n\s*\];/, `const specialLeadersDefault = [\n${formatLeaders(specialLeaders)}\n        ];`);
+
+            return "<!DOCTYPE html>\n" + cleanDocHTML;
         }
 
         function downloadUpdatedHTML() {
@@ -1093,7 +1146,6 @@
 
             if (parsed.length > 0) {
                 traineesData = parsed;
-                localStorage.setItem('traineeList_264', JSON.stringify(traineesData));
                 openAdminModal();
                 renderBoard();
                 alert(`총 ${parsed.length}명의 명단이 반영되었습니다.`);
@@ -1121,7 +1173,6 @@
                         const [ech, col, row, number, name, note] = l.split(',');
                         return { ech: parseInt(ech) || 1, col: parseInt(col) || 1, row: parseInt(row) || 1, number: number || "0", name: name || "신규", note: note || '' };
                     });
-                    localStorage.setItem('traineeList_264', JSON.stringify(traineesData));
                     openAdminModal();
                     renderBoard();
                     alert("CSV 파일이 적용되었습니다.");
@@ -1137,8 +1188,6 @@
         
         function saveLocalOnly() {
             syncFormValues();
-            localStorage.setItem('traineeList_264', JSON.stringify(traineesData));
-            alert("이 기기에 저장되었습니다.");
             toggleModal('detail-modal');
             renderBoard();
         }
@@ -1221,7 +1270,7 @@
                         </div>
                     </div>
                     <button onclick="saveQuickEdit(${index})" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2 rounded text-xs transition">
-                        수정사항 저장하기
+                        수정사항 반영하기
                     </button>
                 </div>
                 <button onclick="toggleModal('detail-modal')" class="mt-3 w-full bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold py-2 rounded-lg text-xs">닫기</button>
@@ -1240,7 +1289,6 @@
             traineesData[idx].name = newName;
             traineesData[idx].note = newNote;
 
-            localStorage.setItem('traineeList_264', JSON.stringify(traineesData));
             alert(`[${newName}] 후보생 정보가 수정되었습니다.`);
             toggleModal('detail-modal');
             renderBoard();
@@ -1250,4 +1298,3 @@
     </script>
 </body>
 </html>
-
